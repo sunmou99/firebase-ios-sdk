@@ -17,7 +17,7 @@ jobs:
         run: mkdir ~/diff
 
       - name: List changed files
-        run: git diff --name-only ${{ github.base_ref }})
+        run: git diff --name-only ${{ github.base_ref }}
 
       - name: Checkout master
         uses: actions/checkout@v3
