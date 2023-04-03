@@ -12,12 +12,14 @@ jobs:
 
       - name: Checkout PR branch
         uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
+      - name: Get changes
+        run: git diff --name-only -r HEAD^1 HEAD
 
       - name: Make diff directory
         run: mkdir ~/diff
-
-      - name: List changed files
-        run: git diff --name-only ${{ github.head_ref }}  `git merge-base ${{ github.head_ref }}  ${{ github.base_ref }}`
 
       - name: Checkout master
         uses: actions/checkout@v3
