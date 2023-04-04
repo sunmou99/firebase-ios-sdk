@@ -53,7 +53,7 @@ def main():
       file_path = os.path.join(output_dir, os.path.basename(file_name) + ".json")
       logging.info(file_path)
       with open(file_path, 'w') as f:
-        f.write(result.stdout.read())
+        f.write(str(result.stdout.read()))
 
 
 

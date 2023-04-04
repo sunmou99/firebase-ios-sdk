@@ -27,9 +27,10 @@ def main():
   merged_branch = os.path.expanduser(args.merged_branch)
   base_branch = os.path.expanduser(args.base_branch)
   
-  for file in os.listdir(merged_branch):
-    merged_file = os.path.join(merged_branch, file)
-    base_file = os.path.join(base_branch, file)
+  for file_name in os.listdir(merged_branch):
+    logging.info(file_name)
+    merged_file = os.path.join(merged_branch, file_name)
+    base_file = os.path.join(base_branch, file_name)
     result = subprocess.run(
             args=["git", "diff", "--no-index", "--word-diff", merged_file, base_file],
             capture_output=True,
