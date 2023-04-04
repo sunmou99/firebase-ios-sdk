@@ -15,11 +15,11 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Get changes
-        run: git diff --name-only -r HEAD^1 HEAD
+      - id: get_changed_files
+        run: echo "file_list=$(git diff --name-only -r HEAD^1 HEAD)" >> $GITHUB_OUTPUT
 
-      - name: Make diff directory
-        run: mkdir ~/diff
+      - name: Generate API files for PR branch
+        run: python scripts/api_diff_report/api_info.py -f ${{ steps.get_changed_files.outputs.file_list }}
 
       - name: Checkout master
         uses: actions/checkout@v3
