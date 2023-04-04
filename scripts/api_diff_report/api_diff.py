@@ -47,16 +47,30 @@ def api_diff(merged_file, base_file):
   logging.info(pr_apis)
   base_apis = get_apis(json.load(open(base_file)))
   logging.info(base_apis)
+  pr_only_apis = get_diff(pr_apis, base_apis)
+  base_only_apis = get_diff(base_apis, pr_apis)
 
 
 def get_apis(api_json):
   if isinstance(api_json, list):
-    for _, value in api_json[0]:
+    for _, value in api_json[0].items():
       return value["key.substructure"]["key.substructure"]
   elif isinstance(api_json, dict):
-    for _, value in api_json:
+    for _, value in api_json.items():
       return value["key.substructure"]["key.substructure"]
 
+
+def get_diff(target, base):
+  diff = []
+  for t in target:
+    if t["key.accessibility"] == "source.lang.swift.accessibility.public":
+      for b in base:
+        if t["key.kind"] == b["key.kind"] and t["key.name"] == b["key.name"] and t["key.typename"] == b["key.typename"]:
+          break
+      else:
+        diff.append(t)
+        logging.info(t)
+  return diff
 
 
 
