@@ -17,6 +17,11 @@ jobs:
 
       - id: get_changed_files
         run: echo "file_list=$(git diff --name-only -r HEAD^1 HEAD | tr '\n' ' ')" >> $GITHUB_OUTPUT
+        
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.7
 
       - name: Generate API files for PR branch
         run: python scripts/api_diff_report/api_info.py -f ${{ steps.get_changed_files.outputs.file_list }} -o "merge_branch"
