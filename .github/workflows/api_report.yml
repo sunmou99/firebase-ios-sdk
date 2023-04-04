@@ -24,10 +24,10 @@ jobs:
           python-version: 3.7
 
       - name: Generate API files for PR branch
-        run: mkdir my_test && cp scripts/api_diff_report/api_info.py my_test/api_info.py
+        run: cp scripts/api_diff_report/api_info.py ${{ github.workspace }}/api_info.py
 
       - name: Generate API files for PR branch
-        run: python my_test/api_info.py -f ${{ steps.get_changed_files.outputs.file_list }} -o "merge_branch"
+        run: python ${{ github.workspace }}/api_info.py -f ${{ steps.get_changed_files.outputs.file_list }} -o "merge_branch"
 
       - name: Checkout master
         uses: actions/checkout@v3
@@ -35,7 +35,7 @@ jobs:
           ref: ${{ github.base_ref }}
 
       - name: Generate API files for PR branch
-        run: python my_test/api_info.py -f ${{ steps.get_changed_files.outputs.file_list }} -o "base_branch"
+        run: python ${{ github.workspace }}/api_info.py -f ${{ steps.get_changed_files.outputs.file_list }} -o "base_branch"
 
       - uses: actions/upload-artifact@v3
         with:
