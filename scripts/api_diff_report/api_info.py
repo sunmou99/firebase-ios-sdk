@@ -24,6 +24,10 @@ def main():
   args = parse_cmdline_args()
   logging.info(args)
   
+  isExist = os.path.exists(args.output_dir)
+  if not isExist:
+    os.makedirs(args.output_dir)
+  
   for file in args.file_list:
     if file.endswith('.swift'):
       result = subprocess.run(
@@ -33,7 +37,7 @@ def main():
                 check=False)
       logging.info(file)
       logging.info(result.stdout)
-      report_file_path = os.path.join(args.output_dir, os.path.join(os.path.basename(file), ".json"))
+      report_file_path = os.path.join(args.output_dir, os.path.basename(file) + ".json")
       with open(report_file_path, 'w') as f:
         f.write(result.stdout)
 
