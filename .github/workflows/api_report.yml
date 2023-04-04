@@ -27,7 +27,7 @@ jobs:
         run: cp scripts/api_diff_report/api_info.py ${{ github.workspace }}/api_info.py
 
       - name: Generate API files for PR branch
-        run: python ${{ github.workspace }}/api_info.py -f ${{ steps.get_changed_files.outputs.file_list }} -o "merge_branch"
+        run: python ${{ github.workspace }}/api_info.py -f ${{ steps.get_changed_files.outputs.file_list }} -o "${{ github.workspace }}/merge_branch"
 
       - name: Checkout master
         uses: actions/checkout@v3
@@ -35,12 +35,12 @@ jobs:
           ref: ${{ github.base_ref }}
 
       - name: Generate API files for PR branch
-        run: python ${{ github.workspace }}/api_info.py -f ${{ steps.get_changed_files.outputs.file_list }} -o "base_branch"
+        run: python ${{ github.workspace }}/api_info.py -f ${{ steps.get_changed_files.outputs.file_list }} -o "${{ github.workspace }}/base_branch"
 
       - uses: actions/upload-artifact@v3
         with:
           name: api_info
           path: | 
-            merge_branch
-            base_branch
+            ${{ github.workspace }}/merge_branch
+            ${{ github.workspace }}/base_branch
           retention-days: 1
