@@ -43,6 +43,7 @@ jobs:
         run: python ~/api_diff.py -m "~/merge_branch" -b "~/base_branch"
 
       - uses: actions/upload-artifact@v3
+        if: ${{ !cancelled() }}
         with:
           name: api_info
           path: | 

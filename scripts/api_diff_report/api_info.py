@@ -29,29 +29,28 @@ def main():
   if not isExist:
     os.makedirs(output_dir)
   
-  for file in args.file_list:
-    if file.endswith('.swift'):
+  for file_name in args.file_list:
+    logging.info(file_name)
+    if file_name.endswith('.swift'):
       result = subprocess.run(
-                args=["sourcekitten", "doc", "--single-file", file],
+                args=["sourcekitten", "doc", "--single-file", file_name],
                 capture_output=True,
                 text=True, 
                 check=False)
       logging.info("------------")
-      logging.info(file)
       logging.info(result.stdout)
-      file_path = os.path.join(output_dir, os.path.basename(file) + ".json")
+      file_path = os.path.join(output_dir, os.path.basename(file_name) + ".json")
       logging.info(file_path)
       with open(file_path, 'w') as f:
         f.write(result.stdout)
-    elif file.endswith('.h'):
-      result = subprocess.Popen(f"sourcekitten doc --objc {file} -- -x objective-c -isysroot $(xcrun --show-sdk-path) -I $(pwd)", 
+    elif file_name.endswith('.h'):
+      result = subprocess.Popen(f"sourcekitten doc --objc {file_name} -- -x objective-c -isysroot $(xcrun --show-sdk-path) -I $(pwd)", 
                                 universal_newlines=True, 
                                 shell=True, 
                                 stdout=subprocess.PIPE)
       logging.info("------------")
-      logging.info(file)
       logging.info(result.stdout.read())
-      file_path = os.path.join(output_dir, os.path.basename(file) + ".json")
+      file_path = os.path.join(output_dir, os.path.basename(file_name) + ".json")
       logging.info(file_path)
       with open(file_path, 'w') as f:
         f.write(result.stdout.read())
