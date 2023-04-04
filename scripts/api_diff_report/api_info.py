@@ -24,9 +24,10 @@ def main():
   args = parse_cmdline_args()
   logging.info(args)
   
-  isExist = os.path.exists(args.output_dir)
+  output_dir = os.path.expanduser(args.output_dir)
+  isExist = os.path.exists(output_dir)
   if not isExist:
-    os.makedirs(args.output_dir)
+    os.makedirs(output_dir)
   
   for file in args.file_list:
     if file.endswith('.swift'):
@@ -36,8 +37,8 @@ def main():
                 text=True, 
                 check=False)
       logging.info(file)
-      logging.info(result.stdout)
-      file_path = os.path.join(args.output_dir, os.path.basename(file) + ".json")
+      # logging.info(result.stdout)
+      file_path = os.path.join(output_dir, os.path.basename(file) + ".json")
       logging.info(file_path)
       with open(file_path, 'w') as f:
         f.write(result.stdout)
