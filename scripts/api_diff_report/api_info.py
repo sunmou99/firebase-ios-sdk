@@ -16,18 +16,32 @@ import json
 import argparse
 import logging
 import os 
+import subprocess
 
 def main():
   logging.getLogger().setLevel(logging.INFO)
 
   args = parse_cmdline_args()
   logging.info(args)
-  logging.info(args.file_list)
+  
+  for file in args.file_list:
+    if file.endswith('.swift'):
+      result = subprocess.run(
+                args=["sourcekitten", "doc", "--single-file", file],
+                capture_output=True,
+                text=True, 
+                check=False)
+      logging.info(file)
+      logging.info(result.stdout)
+      report_file_path = os.path.join(args.output_dir, os.path.join(os.path.basename(file), ".json"))
+      with open(report_file_path, 'w') as f:
+        f.write(result.stdout)
 
 
 def parse_cmdline_args():
   parser = argparse.ArgumentParser()
   parser.add_argument('-f', '--file_list', nargs='+', default=[])
+  parser.add_argument('-o', '--output_dir', default="")
 
   args = parser.parse_args()
   return args

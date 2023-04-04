@@ -19,9 +19,12 @@ jobs:
         run: echo "file_list=$(git diff --name-only -r HEAD^1 HEAD | tr '\n' ' ')" >> $GITHUB_OUTPUT
 
       - name: Generate API files for PR branch
-        run: python scripts/api_diff_report/api_info.py -f ${{ steps.get_changed_files.outputs.file_list }}
+        run: python scripts/api_diff_report/api_info.py -f ${{ steps.get_changed_files.outputs.file_list }} -o "merge_branch"
 
       - name: Checkout master
         uses: actions/checkout@v3
         with:
           ref: ${{ github.base_ref }}
+
+      - name: Generate API files for PR branch
+        run: python scripts/api_diff_report/api_info.py -f ${{ steps.get_changed_files.outputs.file_list }} -o "base_branch"
