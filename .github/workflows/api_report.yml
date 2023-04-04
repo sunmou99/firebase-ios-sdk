@@ -16,7 +16,7 @@ jobs:
           fetch-depth: 2
 
       - id: get_changed_files
-        run: echo "file_list=$(git diff --name-only -r HEAD^1 HEAD)" >> $GITHUB_OUTPUT
+        run: echo "file_list=$(git diff --name-only -r HEAD^1 HEAD | tr '\n' ' ')" >> $GITHUB_OUTPUT
 
       - name: Generate API files for PR branch
         run: python scripts/api_diff_report/api_info.py -f ${{ steps.get_changed_files.outputs.file_list }}
