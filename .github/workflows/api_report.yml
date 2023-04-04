@@ -38,7 +38,7 @@ jobs:
         run: python ~/api_info.py -f ${{ steps.get_changed_files.outputs.file_list }} -o "~/base_branch"
 
       - name: Diff
-        run: python scripts/api_diff_report/api_diff.py/api_diff.py -m "~/merge_branch" -b "~/base_branch"
+        run: python scripts/api_diff_report/api_diff.py -m "~/merge_branch" -b "~/base_branch"
 
       - uses: actions/upload-artifact@v3
         with:
