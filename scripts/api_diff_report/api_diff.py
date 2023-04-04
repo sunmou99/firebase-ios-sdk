@@ -63,13 +63,13 @@ def get_apis(api_json):
 def get_diff(target, base):
   diff = []
   for t in target:
-    if t["key.accessibility"] == "source.lang.swift.accessibility.public":
+    if "key.accessibility" in t and t["key.accessibility"] == "source.lang.swift.accessibility.public":
       for b in base:
         if t["key.kind"] == b["key.kind"] and t["key.name"] == b["key.name"] and t["key.typename"] == b["key.typename"]:
           break
       else:
         diff.append(t)
-        logging.info(t)
+        logging.info(json.dumps(t, indent=2))
   return diff
 
 
