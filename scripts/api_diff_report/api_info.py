@@ -36,12 +36,26 @@ def main():
                 capture_output=True,
                 text=True, 
                 check=False)
+      logging.info("------------")
       logging.info(file)
-      # logging.info(result.stdout)
+      logging.info(result.stdout)
       file_path = os.path.join(output_dir, os.path.basename(file) + ".json")
       logging.info(file_path)
       with open(file_path, 'w') as f:
         f.write(result.stdout)
+    elif file.endswith('.h'):
+      result = subprocess.Popen(f"sourcekitten doc --objc {file} -- -x objective-c -isysroot $(xcrun --show-sdk-path) -I $(pwd)", 
+                                universal_newlines=True, 
+                                shell=True, 
+                                stdout=subprocess.PIPE)
+      logging.info("------------")
+      logging.info(file)
+      logging.info(result.stdout.read())
+      file_path = os.path.join(output_dir, os.path.basename(file) + ".json")
+      logging.info(file_path)
+      with open(file_path, 'w') as f:
+        f.write(result.stdout.read())
+
 
 
 def parse_cmdline_args():
