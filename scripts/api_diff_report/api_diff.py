@@ -57,7 +57,7 @@ def get_apis(api_json):
       return value["key.substructure"]["key.substructure"]
   elif isinstance(api_json, dict):
     for _, value in api_json.items():
-      return value["key.substructure"]["key.substructure"]
+      return value["key.substructure"][0]["key.substructure"]
 
 
 def get_diff(target, base):
