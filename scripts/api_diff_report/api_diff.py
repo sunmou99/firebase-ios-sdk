@@ -31,15 +31,33 @@ def main():
     logging.info(file_name)
     merged_file = os.path.join(merged_branch, file_name)
     base_file = os.path.join(base_branch, file_name)
-    result = subprocess.run(
-            args=["git", "diff", "--no-index", "--word-diff", merged_file, base_file],
-            capture_output=True,
-            text=True, 
-            check=False)
-    logging.info(result.stdout)
-    logging.info("------------")
-    pr_api = json.load(open(merged_file))
-    base_api = json.load(open(base_file))
+    api_diff(merged_file, base_file)
+
+
+
+def api_diff(merged_file, base_file):
+  # result = subprocess.run(
+  #         args=["git", "diff", "--no-index", "--word-diff", merged_file, base_file],
+  #         capture_output=True,
+  #         text=True, 
+  #         check=False)
+  # logging.info(result.stdout)
+  # logging.info("------------")
+  pr_apis = get_apis(json.load(open(merged_file)))
+  logging.info(pr_apis)
+  base_apis = get_apis(json.load(open(base_file)))
+  logging.info(base_apis)
+
+
+def get_apis(api_json):
+  if isinstance(api_json, list):
+    for _, value in api_json[0]:
+      return value["key.substructure"]["key.substructure"]
+  elif isinstance(api_json, dict):
+    for _, value in api_json:
+      return value["key.substructure"]["key.substructure"]
+
+
 
 
 def parse_cmdline_args():
