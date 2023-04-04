@@ -69,7 +69,7 @@ def get_diff(target, base):
           break
       else:
         diff.append(t)
-        logging.info(json.dumps(t, indent=2))
+        print(json.dumps(t, indent=2))
   return diff
 
 
