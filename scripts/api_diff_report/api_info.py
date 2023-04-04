@@ -35,8 +35,8 @@ def main():
                 capture_output=True,
                 text=True, 
                 check=False)
-      logging.info(file)
-      logging.info(result.stdout)
+      # logging.info(file)
+      # logging.info(result.stdout)
       report_file_path = os.path.join(args.output_dir, os.path.basename(file) + ".json")
       with open(report_file_path, 'w') as f:
         f.write(result.stdout)
