@@ -44,18 +44,18 @@ def main():
       logging.info(file_path)
       with open(file_path, 'w') as f:
         f.write(api_info)
-    # elif file_name.endswith('.h'):
-    #   result = subprocess.Popen(f"sourcekitten doc --objc {file_name} -- -x objective-c -isysroot $(xcrun --show-sdk-path) -I $(pwd)", 
-    #                             universal_newlines=True, 
-    #                             shell=True, 
-    #                             stdout=subprocess.PIPE)
-    #   logging.info("------------")
-    #   api_info = result.stdout.read()
-    #   logging.info(api_info)
-    #   file_path = os.path.join(output_dir, os.path.basename(file_name) + ".json")
-    #   logging.info(file_path)
-    #   with open(file_path, 'w') as f:
-    #     f.write(api_info)
+    elif file_name.endswith('.h'):
+      result = subprocess.Popen(f"sourcekitten doc --objc {file_name} -- -x objective-c -isysroot $(xcrun --show-sdk-path) -I $(pwd)", 
+                                universal_newlines=True, 
+                                shell=True, 
+                                stdout=subprocess.PIPE)
+      logging.info("------------")
+      api_info = result.stdout.read()
+      logging.info(api_info)
+      file_path = os.path.join(output_dir, os.path.basename(file_name) + ".json")
+      logging.info(file_path)
+      with open(file_path, 'w') as f:
+        f.write(api_info)
 
 
 
