@@ -27,7 +27,7 @@ public enum ModelDownloadType {
 }
 
 /// Downloader to manage custom model downloads.
-public struct ModelDownloader {
+public class ModelDownloader {
   /// Name of the app associated with this instance of ModelDownloader.
   private let appName: String
 
