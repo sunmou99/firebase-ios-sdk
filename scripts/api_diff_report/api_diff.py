@@ -21,6 +21,11 @@ import subprocess
 OBJC_EXTENSION = "h"
 SWIFT_EXTENSION = "swift"
 
+KEY_KIND = {
+  "source.lang.swift.decl.function.method.instance": "",
+  "source.lang.swift.decl.function.method.static": "static"
+}
+
 def main():
   logging.getLogger().setLevel(logging.INFO)
 
@@ -46,9 +51,9 @@ def api_diff(merged_file, base_file):
 
     pr_only_apis = get_objc_diff(pr_apis, base_apis)
     base_only_apis = get_objc_diff(base_apis, pr_apis)
-    logging.info("API that only exist in this PR")
+    logging.info("Added APIs")
     print_objc_diff(pr_only_apis)
-    logging.info("\nAPI that only exist in Master branch")
+    logging.info("\nRemoved APIS")
     print_objc_diff(base_only_apis)
   elif file_extension == SWIFT_EXTENSION:
     pr_apis = get_swift_public_apis(json.load(open(merged_file)))
@@ -56,9 +61,9 @@ def api_diff(merged_file, base_file):
 
     pr_only_apis = get_swift_diff(pr_apis, base_apis)
     base_only_apis = get_swift_diff(base_apis, pr_apis)
-    logging.info("API that only exist in this PR")
+    logging.info("Added APIs")
     print_swift_diff(pr_only_apis)
-    logging.info("\nAPI that only exist in Master branch")
+    logging.info("\nRemoved APIS")
     print_swift_diff(base_only_apis)
 
 
@@ -98,9 +103,9 @@ def get_swift_diff(target, base):
 
 def print_swift_diff(diff):
   for c in diff["class"]:
-    logging.info(f'Class: {c["key.kind"]} {c["key.name"]}')
+    logging.info(f'{c["key.name"]}')
   for f in diff["function"]:
-    logging.info(f'Function: {f["key.kind"]} {f["key.name"]} {f["key.typename"]}')
+    logging.info(f'Function: public {KEY_KIND[f["key.kind"]]} func {f["key.name"]} -> {f["key.typename"]}')
 
 
 def get_objc_public_apis(api_json):
