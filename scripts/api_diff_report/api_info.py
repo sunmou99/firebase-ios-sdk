@@ -17,6 +17,27 @@ import argparse
 import logging
 import os 
 import subprocess
+import re
+
+PRODUCT_LIST = [
+  "ABTesting",
+  "AppCheck",
+  "AppDistribution",
+  "Analytics",
+  "Authentication",
+  "Core",
+  "Crashlytics",
+  "Database",
+  "DynamicLinks",
+  "Firestore",
+  "Functions",
+  "InAppMessaging",
+  "Installations",
+  "Messaging",
+  "Performance",
+  "RemoteConfig",
+  "Storage"
+]
 
 def main():
   logging.getLogger().setLevel(logging.INFO)
@@ -44,7 +65,13 @@ def main():
       logging.info(file_path)
       with open(file_path, 'w') as f:
         f.write(api_info)
-    elif file_name.endswith('.h'):
+
+      match = re.search(fr"{os.sep}Firebase(.*?){os.sep}")
+      if match:
+        logging.info(match.group())
+      else:
+        logging.info("no matching")
+    elif file_name.endswith('.h') and "Public" in file_name:
       result = subprocess.Popen(f"sourcekitten doc --objc {file_name} -- -x objective-c -isysroot $(xcrun --show-sdk-path) -I $(pwd)", 
                                 universal_newlines=True, 
                                 shell=True, 
