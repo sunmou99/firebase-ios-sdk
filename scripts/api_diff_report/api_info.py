@@ -66,7 +66,8 @@ def main():
       with open(file_path, 'w') as f:
         f.write(api_info)
 
-      match = re.search(fr"{os.sep}Firebase(.*?){os.sep}", file_name)
+      logging.info(fr"Firebase(.*?){os.sep}")
+      match = re.search(fr"Firebase(.*?){os.sep}", file_name)
       if match:
         logging.info(match.group())
       else:
