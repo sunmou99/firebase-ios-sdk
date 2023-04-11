@@ -86,7 +86,6 @@ def main():
       with open(output_path, 'w') as f:
         f.write(api_info)
 
-  build_dir = "build_dir"
   for scheme, files in swift_to_objc.items():
       result = subprocess.Popen("scripts/setup_spm_tests.sh", 
                                 universal_newlines=True, 
@@ -95,7 +94,8 @@ def main():
       logging.info("------------")
       build_info = result.stdout.read()
       # logging.info(build_info)
-      result = subprocess.Popen(f"xcodebuild -scheme {scheme} -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 11' ONLY_ACTIVE_ARCH=YES CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES COMPILER_INDEX_STORE_ENABLE=NO CC=clang CPLUSPLUS=clang++ LD=clang LDPLUSPLUS=clang++ IPHONEOS_DEPLOYMENT_TARGET=13.0 TVOS_DEPLOYMENT_TARGET=13.0 BUILD_DIR={build_dir}", 
+      derived_data_path = f"DerivedData/{scheme}"
+      result = subprocess.Popen(f"xcodebuild -scheme {scheme} -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 11' ONLY_ACTIVE_ARCH=YES CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES COMPILER_INDEX_STORE_ENABLE=NO CC=clang CPLUSPLUS=clang++ LD=clang LDPLUSPLUS=clang++ IPHONEOS_DEPLOYMENT_TARGET=13.0 TVOS_DEPLOYMENT_TARGET=13.0 -derivedDataPath={derived_data_path}", 
                                 universal_newlines=True, 
                                 shell=True, 
                                 stdout=subprocess.PIPE)
@@ -104,12 +104,12 @@ def main():
       # logging.info(build_info)
 
       logging.info(files)
-      for file_dir, _, file_names in os.walk(build_dir):
+      for file_dir, _, file_names in os.walk(derived_data_path):
         for file_name in file_names:
           logging.info(file_name)
-          if file_name in files:
-            logging.info(file_path)
+          if file_name.endswith("-Swift.h"):
             file_path = os.path.join(file_dir, file_name)
+            logging.info(file_path)
             result = subprocess.Popen(f"sourcekitten doc --objc {file_path} -- -x objective-c -isysroot $(xcrun --show-sdk-path) -I $(pwd)", 
                                       universal_newlines=True, 
                                       shell=True, 
