@@ -21,6 +21,7 @@
  * The log levels used by internal logging.
  */
 typedef NS_ENUM(NSInteger, FIRLoggerLevel) {
+  FIRLoggerLevelTest = 999,
   /** Error level, matches ASL_LEVEL_ERR. */
   FIRLoggerLevelError = 3,
   /** Warning level, matches ASL_LEVEL_WARNING. */
