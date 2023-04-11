@@ -50,6 +50,7 @@ def main():
   if not isExist:
     os.makedirs(output_dir)
   
+  swift_to_objc = {}
   for file_name in args.file_list:
     logging.info(file_name)
     if file_name.endswith('.swift'):
@@ -69,7 +70,11 @@ def main():
       logging.info(fr"Firebase(.*?){os.sep}")
       match = re.search(fr"Firebase(.*?){os.sep}", file_name)
       if match:
+        logging.info(match.groups())
+        for g in match.groups():
+          logging.info(g)
         logging.info(match.group())
+        logging.info(os.path.splitext(os.path.basename(file_name))[0])
       else:
         logging.info("no matching")
     elif file_name.endswith('.h') and "Public" in file_name:
