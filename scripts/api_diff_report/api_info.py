@@ -87,7 +87,7 @@ def main():
         f.write(api_info)
 
   for target, files in swift_to_objc.items():
-      result = subprocess.Popen(f"swift build --target {target} --vv", 
+      result = subprocess.Popen(f"swift build --target {target}", 
                                 universal_newlines=True, 
                                 shell=True, 
                                 stdout=subprocess.PIPE)
