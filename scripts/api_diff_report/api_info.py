@@ -54,14 +54,12 @@ def main():
   for file_path in args.file_list:
     logging.info(file_path)
     if file_path.endswith('.swift'):
-      result = subprocess.run(
-                args=["sourcekitten", "doc", "--single-file", file_path],
-                capture_output=True,
-                text=True, 
-                check=False)
+      result = subprocess.Popen(f"sourcekitten doc --single-file {file_path}", 
+                                universal_newlines=True, 
+                                shell=True, 
+                                stdout=subprocess.PIPE)
       logging.info("------------")
-      api_info = result.stdout
-      logging.info(api_info)
+      api_info = result.stdout.read()
       output_path = os.path.join(output_dir, os.path.basename(file_path) + ".json")
       logging.info(output_path)
       with open(output_path, 'w') as f:
@@ -69,7 +67,7 @@ def main():
 
       match = re.search(fr"Firebase(.*?){os.sep}", file_path)
       if match:
-        target = f"firebase{match.groups()[0]}"
+        target = f"Firebase{match.groups()[0]}"
         file_name = os.path.splitext(os.path.basename(file_path))[0]
         if target not in swift_to_objc:
           swift_to_objc[target] = []
