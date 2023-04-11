@@ -92,8 +92,13 @@ def main():
       logging.info("------------")
       build_info = result.stdout.read()
       # logging.info(build_info)
-      project_sys_root = os.path.expanduser("~/{scheme}/build/")
-      result = subprocess.Popen(f"xcodebuild -scheme {scheme} -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 11' ONLY_ACTIVE_ARCH=YES CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES COMPILER_INDEX_STORE_ENABLE=NO CC=clang CPLUSPLUS=clang++ LD=clang LDPLUSPLUS=clang++ IPHONEOS_DEPLOYMENT_TARGET=13.0 TVOS_DEPLOYMENT_TARGET=13.0 SYMROOT={project_sys_root}", 
+      derived_data_location = os.path.expanduser(f"~/{scheme}/build/")
+      subprocess.Popen(f"defaults write com.apple.dt.Xcode IDECustomDerivedDataLocation {derived_data_location}", 
+                                      universal_newlines=True, 
+                                      shell=True, 
+                                      stdout=subprocess.PIPE)
+      
+      result = subprocess.Popen(f"xcodebuild -scheme {scheme} -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 11' ONLY_ACTIVE_ARCH=YES CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES COMPILER_INDEX_STORE_ENABLE=NO CC=clang CPLUSPLUS=clang++ LD=clang LDPLUSPLUS=clang++ IPHONEOS_DEPLOYMENT_TARGET=13.0 TVOS_DEPLOYMENT_TARGET=13.0", 
                                 universal_newlines=True, 
                                 shell=True, 
                                 stdout=subprocess.PIPE)
@@ -101,7 +106,7 @@ def main():
       build_info = result.stdout.read()
       logging.info(build_info)
 
-      for file_dir, _, file_names in os.walk(project_sys_root):
+      for file_dir, _, file_names in os.walk(derived_data_location):
         for file_name in file_names:
           if file_name == objc_header:
             file_path = os.path.join(file_dir, file_name)
