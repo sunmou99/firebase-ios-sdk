@@ -68,10 +68,8 @@ def main():
       match = re.search(fr"Firebase(.*?){os.sep}", file_path)
       if match:
         scheme = f"Firebase{match.groups()[0]}"
-        file_name = os.path.splitext(os.path.basename(file_path))[0]
         if scheme not in swift_to_objc:
-          swift_to_objc[scheme] = []
-        swift_to_objc[scheme].append(f"{file_name}-Swift.h")
+          swift_to_objc[scheme] = f"{scheme}-Swift.h"
       else:
         logging.error(f"no target matching file: {file_path}")
     elif file_path.endswith('.h') and "Public" in file_path:
@@ -94,8 +92,7 @@ def main():
       logging.info("------------")
       build_info = result.stdout.read()
       # logging.info(build_info)
-      derived_data_path = f"DerivedData/{scheme}"
-      result = subprocess.Popen(f"xcodebuild -scheme {scheme} -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 11' ONLY_ACTIVE_ARCH=YES CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES COMPILER_INDEX_STORE_ENABLE=NO CC=clang CPLUSPLUS=clang++ LD=clang LDPLUSPLUS=clang++ IPHONEOS_DEPLOYMENT_TARGET=13.0 TVOS_DEPLOYMENT_TARGET=13.0 -derivedDataPath={derived_data_path}", 
+      result = subprocess.Popen(f"xcodebuild -scheme {scheme} -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 11' ONLY_ACTIVE_ARCH=YES CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES COMPILER_INDEX_STORE_ENABLE=NO CC=clang CPLUSPLUS=clang++ LD=clang LDPLUSPLUS=clang++ IPHONEOS_DEPLOYMENT_TARGET=13.0 TVOS_DEPLOYMENT_TARGET=13.0", 
                                 universal_newlines=True, 
                                 shell=True, 
                                 stdout=subprocess.PIPE)
@@ -104,10 +101,11 @@ def main():
       # logging.info(build_info)
 
       logging.info(files)
+      derived_data_path = os.path.expanduser("~/Library/Developer/Xcode/DerivedData/")
       for file_dir, _, file_names in os.walk(derived_data_path):
         for file_name in file_names:
           logging.info(file_name)
-          if file_name.endswith("-Swift.h"):
+          if file_name.endswith("-Swift.h") and file_name==swift_to_objc[scheme]:
             file_path = os.path.join(file_dir, file_name)
             logging.info(file_path)
             result = subprocess.Popen(f"sourcekitten doc --objc {file_path} -- -x objective-c -isysroot $(xcrun --show-sdk-path) -I $(pwd)", 
