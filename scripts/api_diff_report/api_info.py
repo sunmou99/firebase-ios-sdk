@@ -92,11 +92,11 @@ def main():
       logging.info("------------")
       build_info = result.stdout.read()
       # logging.info(build_info)
-      derived_data_location = os.path.expanduser(f"~/{scheme}/build/")
-      subprocess.Popen(f"defaults write com.apple.dt.Xcode IDECustomDerivedDataLocation {derived_data_location}", 
-                                      universal_newlines=True, 
-                                      shell=True, 
-                                      stdout=subprocess.PIPE)
+      # derived_data_location = os.path.expanduser(f"~/{scheme}/build/")
+      # subprocess.Popen(f"defaults write com.apple.dt.Xcode IDECustomDerivedDataLocation {derived_data_location}", 
+      #                                 universal_newlines=True, 
+      #                                 shell=True, 
+      #                                 stdout=subprocess.PIPE)
       
       result = subprocess.Popen(f"xcodebuild -scheme {scheme} -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 11' ONLY_ACTIVE_ARCH=YES CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES COMPILER_INDEX_STORE_ENABLE=NO CC=clang CPLUSPLUS=clang++ LD=clang LDPLUSPLUS=clang++ IPHONEOS_DEPLOYMENT_TARGET=13.0 TVOS_DEPLOYMENT_TARGET=13.0", 
                                 universal_newlines=True, 
@@ -106,11 +106,16 @@ def main():
       build_info = result.stdout.read()
       logging.info(build_info)
 
+      derived_data_location = os.path.expanduser("~/Library/Developer/Xcode/DerivedData/")
       for file_dir, _, file_names in os.walk(derived_data_location):
         for file_name in file_names:
           if file_name == objc_header:
             file_path = os.path.join(file_dir, file_name)
             logging.info(file_path)
+            subprocess.Popen(f"cp {file_path} {os.path.join(output_dir, file_name)}", 
+                                      universal_newlines=True, 
+                                      shell=True, 
+                                      stdout=subprocess.PIPE)
             result = subprocess.Popen(f"sourcekitten doc --objc {file_path} -- -x objective-c -isysroot $(xcrun --show-sdk-path) -I $(pwd)", 
                                       universal_newlines=True, 
                                       shell=True, 
