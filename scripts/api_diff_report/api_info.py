@@ -81,14 +81,13 @@ def main():
                                 stdout=subprocess.PIPE)
       logging.info("------------")
       api_info = result.stdout.read()
-      logging.info(api_info)
       output_path = os.path.join(output_dir, os.path.basename(file_path) + ".json")
       logging.info(output_path)
       with open(output_path, 'w') as f:
         f.write(api_info)
 
   for target, files in swift_to_objc.items():
-      result = subprocess.Popen(f"swift build --target {target} BUILD_DIR={output_dir}", 
+      result = subprocess.Popen(f"swift build --target {target} --vv", 
                                 universal_newlines=True, 
                                 shell=True, 
                                 stdout=subprocess.PIPE)

@@ -30,9 +30,9 @@ jobs:
 
       - name: Generate API files for PR branch
         run: |
-          brew install tree
+          # brew install tree
           python ~/api_info.py -f ${{ steps.get_changed_files.outputs.file_list }} -o "~/merge_branch"
-          tree "~/merge_branch"
+          # tree "~/merge_branch"
 
       - name: Checkout master
         uses: actions/checkout@v3
