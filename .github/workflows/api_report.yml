@@ -32,7 +32,7 @@ jobs:
         run: |
           brew install tree
           python ~/api_info.py -f ${{ steps.get_changed_files.outputs.file_list }} -o "~/merge_branch"
-          tree -a
+          tree -a "~/merge_branch"
 
       - name: Checkout master
         uses: actions/checkout@v3

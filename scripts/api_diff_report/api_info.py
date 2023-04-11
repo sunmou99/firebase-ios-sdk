@@ -67,7 +67,7 @@ def main():
 
       match = re.search(fr"Firebase(.*?){os.sep}", file_path)
       if match:
-        target = f"Firebase{match.groups()[0]}"
+        target = f"Firebase{match.groups()[0]}Unit"
         file_name = os.path.splitext(os.path.basename(file_path))[0]
         if target not in swift_to_objc:
           swift_to_objc[target] = []
@@ -87,7 +87,14 @@ def main():
         f.write(api_info)
 
   for target, files in swift_to_objc.items():
-      result = subprocess.Popen(f"swift build --target {target}", 
+      result = subprocess.Popen("scripts/setup_spm_tests.sh", 
+                                universal_newlines=True, 
+                                shell=True, 
+                                stdout=subprocess.PIPE)
+      logging.info("------------")
+      build_info = result.stdout.read()
+      logging.info(build_info)
+      result = subprocess.Popen(f"xcodebuild -scheme {target} -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 11' ONLY_ACTIVE_ARCH=YES CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES COMPILER_INDEX_STORE_ENABLE=NO CC=clang CPLUSPLUS=clang++ LD=clang LDPLUSPLUS=clang++ IPHONEOS_DEPLOYMENT_TARGET=13.0 TVOS_DEPLOYMENT_TARGET=13.0 BUILD_DIR={output_dir}", 
                                 universal_newlines=True, 
                                 shell=True, 
                                 stdout=subprocess.PIPE)
