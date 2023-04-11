@@ -29,7 +29,10 @@ jobs:
           cp scripts/api_diff_report/api_diff.py ~/api_diff.py
 
       - name: Generate API files for PR branch
-        run: python ~/api_info.py -f ${{ steps.get_changed_files.outputs.file_list }} -o "~/merge_branch"
+        run: |
+          brew install tree
+          python ~/api_info.py -f ${{ steps.get_changed_files.outputs.file_list }} -o "~/merge_branch"
+          tree "~/merge_branch"
 
       - name: Checkout master
         uses: actions/checkout@v3
