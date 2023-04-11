@@ -86,6 +86,7 @@ def main():
       with open(output_path, 'w') as f:
         f.write(api_info)
 
+  build_dir = "build_dir"
   for scheme, files in swift_to_objc.items():
       result = subprocess.Popen("scripts/setup_spm_tests.sh", 
                                 universal_newlines=True, 
@@ -93,17 +94,19 @@ def main():
                                 stdout=subprocess.PIPE)
       logging.info("------------")
       build_info = result.stdout.read()
-      logging.info(build_info)
-      result = subprocess.Popen(f"xcodebuild -scheme {scheme} -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 11' ONLY_ACTIVE_ARCH=YES CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES COMPILER_INDEX_STORE_ENABLE=NO CC=clang CPLUSPLUS=clang++ LD=clang LDPLUSPLUS=clang++ IPHONEOS_DEPLOYMENT_TARGET=13.0 TVOS_DEPLOYMENT_TARGET=13.0 BUILD_DIR={output_dir}", 
+      # logging.info(build_info)
+      result = subprocess.Popen(f"xcodebuild -scheme {scheme} -sdk iphonesimulator -destination 'platform=iOS Simulator,name=iPhone 11' ONLY_ACTIVE_ARCH=YES CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=YES COMPILER_INDEX_STORE_ENABLE=NO CC=clang CPLUSPLUS=clang++ LD=clang LDPLUSPLUS=clang++ IPHONEOS_DEPLOYMENT_TARGET=13.0 TVOS_DEPLOYMENT_TARGET=13.0 BUILD_DIR={build_dir}", 
                                 universal_newlines=True, 
                                 shell=True, 
                                 stdout=subprocess.PIPE)
       logging.info("------------")
       build_info = result.stdout.read()
-      logging.info(build_info)
+      # logging.info(build_info)
 
-      for file_dir, _, file_names in os.walk(output_dir):
+      logging.info(files)
+      for file_dir, _, file_names in os.walk(build_dir):
         for file_name in file_names:
+          logging.info(file_name)
           if file_name in files:
             logging.info(file_path)
             file_path = os.path.join(file_dir, file_name)
