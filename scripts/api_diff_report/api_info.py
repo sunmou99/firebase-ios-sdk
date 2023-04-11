@@ -51,42 +51,54 @@ def main():
     os.makedirs(output_dir)
   
   swift_to_objc = {}
-  for file_name in args.file_list:
-    logging.info(file_name)
-    if file_name.endswith('.swift'):
+  for file_path in args.file_list:
+    logging.info(file_path)
+    if file_path.endswith('.swift'):
       result = subprocess.run(
-                args=["sourcekitten", "doc", "--single-file", file_name],
+                args=["sourcekitten", "doc", "--single-file", file_path],
                 capture_output=True,
                 text=True, 
                 check=False)
       logging.info("------------")
       api_info = result.stdout
       logging.info(api_info)
-      file_path = os.path.join(output_dir, os.path.basename(file_name) + ".json")
-      logging.info(file_path)
-      with open(file_path, 'w') as f:
+      output_path = os.path.join(output_dir, os.path.basename(file_path) + ".json")
+      logging.info(output_path)
+      with open(output_path, 'w') as f:
         f.write(api_info)
 
-      logging.info(fr"Firebase(.*?){os.sep}")
-      match = re.search(fr"Firebase(.*?){os.sep}", file_name)
+      match = re.search(fr"Firebase(.*?){os.sep}", file_path)
       if match:
-        logging.info(match.groups()[0])
-        logging.info(match.group())
-        logging.info(os.path.splitext(os.path.basename(file_name))[0])
+        target = f"firebase{match.groups()[0]}"
+        file_name = os.path.splitext(os.path.basename(file_path))[0]
+        if target not in swift_to_objc:
+          swift_to_objc[target] = []
+        swift_to_objc[target].append(file_name)
       else:
-        logging.error("no matching")
-    elif file_name.endswith('.h') and "Public" in file_name:
-      result = subprocess.Popen(f"sourcekitten doc --objc {file_name} -- -x objective-c -isysroot $(xcrun --show-sdk-path) -I $(pwd)", 
+        logging.error(f"no target matching file: {file_path}")
+    elif file_path.endswith('.h') and "Public" in file_path:
+      result = subprocess.Popen(f"sourcekitten doc --objc {file_path} -- -x objective-c -isysroot $(xcrun --show-sdk-path) -I $(pwd)", 
                                 universal_newlines=True, 
                                 shell=True, 
                                 stdout=subprocess.PIPE)
       logging.info("------------")
       api_info = result.stdout.read()
       logging.info(api_info)
-      file_path = os.path.join(output_dir, os.path.basename(file_name) + ".json")
-      logging.info(file_path)
-      with open(file_path, 'w') as f:
+      output_path = os.path.join(output_dir, os.path.basename(file_path) + ".json")
+      logging.info(output_path)
+      with open(output_path, 'w') as f:
         f.write(api_info)
+
+  for target, files in swift_to_objc.items():
+      result = subprocess.Popen(f"swift build --target {target}", 
+                                universal_newlines=True, 
+                                shell=True, 
+                                stdout=subprocess.PIPE)
+      logging.info("------------")
+      build_info = result.stdout.read()
+      logging.info(build_info)
+    
+
 
 
 
