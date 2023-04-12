@@ -40,7 +40,17 @@ def main():
     merged_file = os.path.join(merged_branch, file_name)
     base_file = os.path.join(base_branch, file_name)
     api_diff(merged_file, base_file)
+    text_diff(merged_file, base_file)
 
+
+def text_diff(merged_file, base_file):
+  result = subprocess.Popen(f"git diff --no-index --word-diff {merged_file} {base_file}", 
+                            universal_newlines=True, 
+                            shell=True, 
+                            stdout=subprocess.PIPE)
+  logging.info("------------")
+  api_info = result.stdout.read()
+  logging.info(api_info)
 
 
 def api_diff(merged_file, base_file):
