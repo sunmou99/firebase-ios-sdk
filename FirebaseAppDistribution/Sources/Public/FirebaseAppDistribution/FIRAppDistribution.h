@@ -41,14 +41,13 @@ NS_SWIFT_NAME(AppDistribution)
 /**
  * Sign-in the App Distribution tester
  */
-- (void)signInTesterWithCompletion:(void (^)(NSError *_Nullable error))completion
+- (void)signInTesterWithCompletion:(void (^)(NSError * error))completion
     NS_SWIFT_NAME(signInTester(completion:));
 
 /**
  * Check to see whether a new distribution is available
  */
-- (void)checkForUpdateWithCompletion:(void (^)(FIRAppDistributionRelease *_Nullable_result release,
-                                               NSError *_Nullable error))completion
+- (void)checkForUpdateWithCompletion:(void (^)(FIRAppDistributionRelease *_Nullable_result release))completion
     NS_SWIFT_NAME(checkForUpdate(completion:));
 
 /**

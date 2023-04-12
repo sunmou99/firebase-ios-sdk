@@ -24,6 +24,9 @@ NS_ASSUME_NONNULL_BEGIN
 typedef void (^FIRAppVoidBoolCallback)(BOOL success)
     NS_SWIFT_UNAVAILABLE("Use Swift's closure syntax instead.");
 
+typedef void (^FIRAppVoidBoolCallbackTest)(BOOL success)
+    NS_SWIFT_UNAVAILABLE("Use Swift's closure syntax instead.");
+
 /**
  * The entry point of Firebase SDKs.
  *
@@ -61,7 +64,7 @@ NS_SWIFT_NAME(FirebaseApp)
  *
  * @param options The Firebase application options used to configure the service.
  */
-+ (void)configureWithOptions:(FIROptions *)options NS_SWIFT_NAME(configure(options:));
++ (void)configureWithOptions:(FIROptions *__nullable)options NS_SWIFT_NAME(configure(options:));
 
 /**
  * Configures a Firebase app with the given name and options. Raises an exception if any

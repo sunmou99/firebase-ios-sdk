@@ -96,11 +96,19 @@ public class ModelDownloader {
   }
 
   /// Model downloader with default app.
-  public static func modelDownloader() -> ModelDownloader {
+  public static func modelDownloader() -> ModelDownloader? {
     guard let defaultApp = FirebaseApp.app() else {
       fatalError(ModelDownloader.ErrorDescription.defaultAppNotConfigured)
     }
     return modelDownloader(app: defaultApp)
+  }
+
+  /// Model downloader with default app.
+  public static func modelDownloaderNullable() -> ModelDownloader? {
+    guard let defaultApp = FirebaseApp.app() else {
+      fatalError(ModelDownloader.ErrorDescription.defaultAppNotConfigured)
+    }
+    return nil
   }
 
   /// Model Downloader with custom app.
