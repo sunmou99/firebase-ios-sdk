@@ -8,18 +8,44 @@ jobs:
 
     steps:
       - name: Install Sourcekitten
-        run:  brew install sourcekitten
+        run:  gem install jazzy
 
       - name: Checkout PR branch
-        uses: actions/checkout@v3
+              uses: actions/checkout@v3
+              with:
+                fetch-depth: 2
 
-      - name: Make diff directory
-        run: mkdir ~/diff
+      - id: get_changed_files
+        run: echo "file_list=$(git diff --name-only -r HEAD^1 HEAD | tr '\n' ' ')" >> $GITHUB_OUTPUT
+        
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.7
 
-      - name: List changed files
-        run: git diff --name-only ${{ github.base_ref }})
+      - name: Copy script
+        run: |
+          cp scripts/api_diff_report/api_info.py ~/api_info.py
+          cp scripts/api_diff_report/api_diff.py ~/api_diff.py
+      - name: Generate API files for PR branch
+        run: python ~/api_info.py -f ${{ steps.get_changed_files.outputs.file_list }} -o "~/merge_branch"
 
       - name: Checkout master
         uses: actions/checkout@v3
         with:
           ref: ${{ github.base_ref }}
+
+      - name: Generate API files for Base branch
+        run: python ~/api_info.py -f ${{ steps.get_changed_files.outputs.file_list }} -o "~/base_branch"
+
+      - name: Diff
+        run: python ~/api_diff.py -m "~/merge_branch" -b "~/base_branch"
+
+      - uses: actions/upload-artifact@v3
+        if: ${{ !cancelled() }}
+        with:
+          name: api_info
+          path: | 
+            ~/merge_branch
+            ~/base_branch
+          retention-days: 1
