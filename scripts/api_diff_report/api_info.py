@@ -64,7 +64,7 @@ def main():
   logging.info(changed_products)
 
   # for product in changed_products:
-  result = subprocess.Popen(f"jazzy --swift-build-tool spm --build-tool-arguments --target,FirebaseMLModelDownloader --output {output_dir}/m", 
+  result = subprocess.Popen(f"jazzy --module FirebaseMLModelDownloader --swift-build-tool spm --build-tool-arguments --target,FirebaseMLModelDownloader --output {output_dir}/m", 
                             universal_newlines=True, 
                             shell=True, 
                             stdout=subprocess.PIPE)
