@@ -63,17 +63,28 @@ def main():
         changed_products.add(product)
   logging.info(changed_products)
 
-  for product in changed_products:
-    result = subprocess.Popen(f"jazzy --module Firebase{product} --swift-build-tool spm --build-tool-arguments --target,Firebase{product} --output {output_dir}", 
-                              universal_newlines=True, 
-                              shell=True, 
-                              stdout=subprocess.PIPE)
-    logging.info("------------")
-    api_info = result.stdout.read()
-    output_path = os.path.join(output_dir, os.path.basename(file_path) + ".json")
-    logging.info(output_path)
-    with open(output_path, 'w') as f:
-      f.write(api_info)
+  # for product in changed_products:
+  result = subprocess.Popen(f"jazzy --swift-build-tool spm --build-tool-arguments --target,FirebaseMLModelDownloader --output {output_dir}/m", 
+                            universal_newlines=True, 
+                            shell=True, 
+                            stdout=subprocess.PIPE)
+  logging.info("------------")
+  api_info = result.stdout.read()
+  output_path = os.path.join(output_dir, os.path.basename(file_path) + ".json")
+  logging.info(output_path)
+  with open(output_path, 'w') as f:
+    f.write(api_info)
+
+  result = subprocess.Popen(f"jazzy --swift-build-tool xcodebuild --build-tool-arguments -scheme,FirebaseAppDistribution-Beta,-destination,generic/platform=iOS,build --output {output_dir}/d", 
+                            universal_newlines=True, 
+                            shell=True, 
+                            stdout=subprocess.PIPE)
+  logging.info("------------")
+  api_info = result.stdout.read()
+  output_path = os.path.join(output_dir, os.path.basename(file_path) + ".json")
+  logging.info(output_path)
+  with open(output_path, 'w') as f:
+    f.write(api_info)
 
 
 

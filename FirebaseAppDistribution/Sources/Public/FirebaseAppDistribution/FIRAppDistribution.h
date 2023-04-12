@@ -41,7 +41,7 @@ NS_SWIFT_NAME(AppDistribution)
 /**
  * Sign-in the App Distribution tester
  */
-- (void)signInTesterWithCompletion:(void (^)(NSError * error))completion
+- (void)signInTesterWithCompletion:(void (^)(NSError *_Nullable error))completion
     NS_SWIFT_NAME(signInTester(completion:));
 
 /**
