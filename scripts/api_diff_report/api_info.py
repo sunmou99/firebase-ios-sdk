@@ -46,9 +46,10 @@ def main():
   logging.info(args)
   
   output_dir = os.path.expanduser(args.output_dir)
-  isExist = os.path.exists(output_dir)
-  # if not isExist:
-  #   os.makedirs(output_dir)
+  if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
+  changed_api_files = [f for f in args.file_list if f.endswith('.swift') or (f.endswith('.h') and "Public" in f)]
   
   result = subprocess.Popen("swift package dump-package", 
                             universal_newlines=True, 
@@ -63,13 +64,14 @@ def main():
   logging.info(module_scheme)
   logging.info(path_module)
 
-  changed_module = set()
-  for file_path in args.file_list:
+  changed_modules = set()
+  for file_path in changed_api_files:
     logging.info(file_path)
     for path, module in path_module:
       if path in file_path:
-        changed_module.add(module)
-  logging.info(changed_module)
+        changed_modules.add(module)
+ 
+  logging.info(changed_modules)
 
   # # for product in changed_products:
   # result = subprocess.Popen(f"jazzy --module FirebaseMLModelDownloader --swift-build-tool spm --build-tool-arguments --target,FirebaseMLModelDownloader --output {output_dir}/m", 
