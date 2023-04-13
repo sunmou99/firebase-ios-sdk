@@ -19,23 +19,14 @@ import os
 import subprocess
 import re
 
-PROUDCT_LIST = [
-  "ABTesting",
-  "AppCheck",
-  "AppDistribution",
-  "Analytics",
-  "Authentication",
-  "Core",
-  "Crashlytics",
-  "Database",
-  "DynamicLinks",
-  "Firestore",
+SWIFT_MODULE = [
+  "AnalyticsSwift",
+  "DatabaseSwift",
+  "FirestoreSwift",
   "Functions",
-  "InAppMessaging",
-  "Installations",
-  "Messaging",
-  "Performance",
-  "RemoteConfig",
+  "InAppMessagingSwift",
+  "MLModelDownloader",
+  "RemoteConfigSwift",
   "Storage"
 ]
 
@@ -67,7 +58,7 @@ def main():
   changed_modules = set()
   for file_path in changed_api_files:
     logging.info(file_path)
-    for path, module in path_module:
+    for path, module in path_module.items():
       if path in file_path:
         changed_modules.add(module)
  
