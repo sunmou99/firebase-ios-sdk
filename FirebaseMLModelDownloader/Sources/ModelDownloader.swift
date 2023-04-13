@@ -103,6 +103,14 @@ public class ModelDownloader {
     return modelDownloader(app: defaultApp)
   }
 
+  /// Model downloader with default app.
+  public static func modelDownloaderTest() -> ModelDownloader {
+    guard let defaultApp = FirebaseApp.app() else {
+      fatalError(ModelDownloader.ErrorDescription.defaultAppNotConfigured)
+    }
+    return modelDownloader(app: defaultApp)
+  }
+
   /// Model Downloader with custom app.
   public static func modelDownloader(app: FirebaseApp) -> ModelDownloader {
     if let downloader = modelDownloaderDictionary[app.name] {
