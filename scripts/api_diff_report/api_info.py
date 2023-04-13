@@ -75,7 +75,7 @@ def main():
   with open(output_path, 'w') as f:
     f.write(api_info)
 
-  result = subprocess.Popen(f"jazzy --swift-build-tool xcodebuild --build-tool-arguments -scheme,FirebaseAppDistribution-Beta,-destination,generic/platform=iOS,build --output {output_dir}/d", 
+  result = subprocess.Popen(f"jazzy --objc --framework-root FirebaseAppDistribution/Sources --umbrella-header FirebaseAppDistribution/Sources/Public/FirebaseAppDistribution/FIRAppDistribution.h {output_dir}/d", 
                             universal_newlines=True, 
                             shell=True, 
                             stdout=subprocess.PIPE)
