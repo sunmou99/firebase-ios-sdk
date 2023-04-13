@@ -47,13 +47,16 @@ def main():
   
   output_dir = os.path.expanduser(args.output_dir)
   isExist = os.path.exists(output_dir)
-  if not isExist:
-    os.makedirs(output_dir)
+  # if not isExist:
+  #   os.makedirs(output_dir)
   
-  # product_list = [x for x in next(os.walk('.'))[1] if x.startswith("Firebase") or x=="Firestore"]
-  # target_list = [os.path.splitext(x)[0] for x in next(os.walk('.'))[2] if x.startswith("Firebase") and x.endswith(".podspec")]
-  # logging.info(product_list)
-  # logging.info(target_list)
+  result = subprocess.Popen("swift package dump-package", 
+                            universal_newlines=True, 
+                            shell=True, 
+                            stdout=subprocess.PIPE)
+  logging.info("------------")
+  package_json = json.loads(result.stdout.read())
+  logging.info(package_json)
 
   changed_products = set()
   for file_path in args.file_list:
