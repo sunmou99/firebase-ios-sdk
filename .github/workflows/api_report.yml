@@ -7,8 +7,10 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - name: Install Jazzy
-        run:  gem install jazzy
+      - name: Install Prerequsit
+        run:  |
+          gem install jazzy
+          pip install BeautifulSoup4
 
       - name: Checkout PR branch
         uses: actions/checkout@v3

@@ -15,14 +15,13 @@
 import json
 import argparse
 import logging
-import os 
+import os
 import subprocess
 import re
-
 from urllib.parse import unquote
 from bs4 import BeautifulSoup
 
-# https://source.corp.google.com/piper///depot/google3/googlemac/iPhone/Firebase/Docs/jazzy/jazzyFirebase.sh;l=22?q=jazzyfirebase.sh
+# List of Swift and Objective-C modules
 SWIFT_MODULE = [
   "AnalyticsSwift",
   "DatabaseSwift",
@@ -31,7 +30,7 @@ SWIFT_MODULE = [
   "InAppMessagingSwift",
   "MLModelDownloader",
   "RemoteConfigSwift",
-  "Storage"
+  "Storage",
 ]
 
 OBJC_MODULE = [
@@ -50,37 +49,42 @@ OBJC_MODULE = [
   "InAppMessaging",
   "Messaging",
   "Performance",
-  "RemoteConfig"
+  "RemoteConfig",
 ]
 
+# Main function
 def main():
   logging.getLogger().setLevel(logging.INFO)
 
+  # Parse command-line arguments
   args = parse_cmdline_args()
   output_dir = os.path.expanduser(args.output_dir)
   if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
-  changed_api_files = [f for f in args.file_list if f.endswith('.swift') or (f.endswith('.h') and "Public" in f)]
-  changed_modules = detect_changed_modules(changed_api_files)
+  # Detect changed modules based on changed API files
+  changed_api_files = [f for f in args.file_list if f.endswith(".swift") or (f.endswith(".h") and "Public" in f)]
+  # changed_modules = detect_changed_modules(changed_api_files)
   changed_modules = ["MLModelDownloader"]
+
+  # Generate API documentation and parse API declarations for each changed module
   for module in changed_modules:
     api_doc_path = os.path.join(output_dir, "doc", module)
     build_api_doc(module, api_doc_path)
 
     module_data = parse_module(api_doc_path)
     output_path = os.path.join(output_dir, "module_data.json")
-    logging.info(output_path)
-    with open(output_path, 'w') as f:
+    logging.info(f"Writing module data to {output_path}")
+    with open(output_path, "w") as f:
       f.write(json.dumps(module_data, indent=2))
 
-    api_data_conatiner = {}
+    api_data_container = {}
     for _, api_abstract in module_data.items():
-      parse_api(api_doc_path, api_abstract, api_data_conatiner)
+        parse_api(api_doc_path, api_abstract, api_data_container)
     output_path = os.path.join(output_dir, "api_data.json")
-    logging.info(output_path)
-    with open(output_path, 'w') as f:
-      f.write(json.dumps(api_data_conatiner, indent=2))
+    logging.info(f"Writing API data to {output_path}")
+    with open(output_path, "w") as f:
+      f.write(json.dumps(api_data_container, indent=2))
 
 
 def collect_module_info():
@@ -99,6 +103,7 @@ def collect_module_info():
   logging.info(json.dumps(module_path, indent=2))
 
 
+# Detect changed modules based on changed API files
 def detect_changed_modules(changed_api_files):
   changed_modules = set()
   for file_path in changed_api_files:
@@ -107,6 +112,8 @@ def detect_changed_modules(changed_api_files):
       if path in file_path:
         changed_modules.add(module)
 
+
+# Build API documentation for a specific module
 def build_api_doc(module, output_dir):
   if module in SWIFT_MODULE:
     logging.info("------------")
@@ -127,7 +134,21 @@ def build_api_doc(module, output_dir):
   #   logging.info(result.stdout.read())
 
 
-# {$api_type: {"api_type_link": $api_type_link, "apis": { $api_name: $api_link }}}
+# Parse "${module}/index.html" and extract necessary information
+# e.g.
+# {
+#   $(api_type_1): {
+#     "api_type_link": $(api_type_link),
+#     "apis": {
+#       $(api_name_1): $(api_link_1),
+#       $(api_name_2): $(api_link_2),
+#       ..
+#     }
+#   },
+#   $(api_type_2): {
+#     ..
+#   },
+# }
 def parse_module(api_doc_path):
   module_data_container = {}
   # Read the HTML content from the file
@@ -160,7 +181,21 @@ def parse_module(api_doc_path):
   return module_data_container
 
 
-# {$api_name: {"declaration": $api_declaration, "sub_apis": { $sub_api_name: $_declaration }}}
+# Parse API html and extract necessary information. e.g. ${module}/Classes.html
+# e.g
+# {
+#   $(api_name_1): {
+#     "declaration": [$(swift_declaration), (objc_declaration)],
+#     "sub_apis": {
+#       $(sub_api_name_1): [$(swift_declaration), (objc_declaration)],
+#       $(sub_api_name_2): [$(swift_declaration), (objc_declaration)],
+#       ..
+#     }
+#   },
+#   $(api_name_2): {
+#     ..
+#   },
+# }
 def parse_api(api_doc_path, api_abstract, api_data_container):
   api_type_link = f'{api_doc_path}/{unquote(api_abstract["api_type_link"])}'
   with open(api_type_link, "r") as file:
@@ -180,6 +215,7 @@ def parse_api(api_doc_path, api_abstract, api_data_container):
       parse_sub_api(f'{api_doc_path}/{unquote(api_link)}', api_data_container[api])
 
 
+# Parse SUB_API html and extract necessary information. e.g. ${module}/Classes/${class_name}.html
 def parse_sub_api(api_link, sub_api_data_container):
   with open(api_link, "r") as file:
     html_content = file.read()
