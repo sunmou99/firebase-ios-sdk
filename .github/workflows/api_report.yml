@@ -7,7 +7,7 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - name: Install Sourcekitten
+      - name: Install Jazzy
         run:  gem install jazzy
 
       - name: Checkout PR branch
