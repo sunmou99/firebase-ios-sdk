@@ -26,6 +26,16 @@ public enum ModelDownloadType {
   case latestModel
 }
 
+/// Possible ways to get a custom model.
+public struct ModelDownloadTypeStruct {
+  /// Get local model stored on device if available. If no local model on device, this is the same as `latestModel`.
+  case localModel
+  /// Get local model on device if available and update to latest model from server in the background. If no local model on device, this is the same as `latestModel`.
+  case localModelUpdateInBackground
+  /// Get latest model from server. Does not make a network call for model file download if local model matches the latest version on server.
+  case latestModel
+}
+
 /// Downloader to manage custom model downloads.
 public class ModelDownloader {
   /// Name of the app associated with this instance of ModelDownloader.
