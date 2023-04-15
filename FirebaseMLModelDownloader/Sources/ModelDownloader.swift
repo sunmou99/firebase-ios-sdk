@@ -35,17 +35,6 @@ public enum ModelDownloadTypeTest {
   case latestModel
 }
 
-/// Possible ways to get a custom model.
-public struct ModelDownloadStruct {
-  /// Model downloader with default app.
-  public static func modelDownloader() -> ModelDownloader {
-    guard let defaultApp = FirebaseApp.app() else {
-      fatalError(ModelDownloader.ErrorDescription.defaultAppNotConfigured)
-    }
-    return modelDownloader(app: defaultApp)
-  }
-}
-
 /// Downloader to manage custom model downloads.
 public class ModelDownloader {
   /// Name of the app associated with this instance of ModelDownloader.
