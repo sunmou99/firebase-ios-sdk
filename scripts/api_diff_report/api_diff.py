@@ -30,128 +30,132 @@ def main():
   logging.getLogger().setLevel(logging.INFO)
 
   args = parse_cmdline_args()
-  logging.info(args)
   
   merged_branch = os.path.expanduser(args.merged_branch)
   base_branch = os.path.expanduser(args.base_branch)
   
-  for file_name in os.listdir(merged_branch):
-    logging.info(f"\n\nDetect API changes in {file_name}")
-    merged_file = os.path.join(merged_branch, file_name)
-    base_file = os.path.join(base_branch, file_name)
-    api_diff(merged_file, base_file)
-    text_diff(merged_file, base_file)
+  new_api_json = json.load(open(os.path.join(merged_branch, "api_data.json")))
+  old_api_json = json.load(open(os.path.join(base_branch, "api_data.json")))  # Replace with the second JSON object you want to compare
+
+  diff = generate_diff(new_api_json, old_api_json)
+  print(json.dumps(diff, indent=2))
+  print(print_diff_report_text(diff))
+  print(print_diff_report_markdown(diff))
 
 
-def text_diff(merged_file, base_file):
-  result = subprocess.Popen(f"git diff --no-index --word-diff {merged_file} {base_file}", 
-                            universal_newlines=True, 
-                            shell=True, 
-                            stdout=subprocess.PIPE)
-  logging.info("------------")
-  api_info = result.stdout.read()
-  logging.info(api_info)
+def generate_diff(json_new, json_old):
+  diff_report = {}
+
+  for api_type, api_data in json_old.items():
+    api_type_diff = {"apis": {}}
+
+    for api_name, api_info in api_data["apis"].items():
+      api_diff = {}
+
+      # Compare API declaration
+      old_declaration = set(api_info["declaration"])
+      new_declaration = set(json_new[api_type]["apis"][api_name]["declaration"])
+
+      if old_declaration != new_declaration:
+        api_diff["declaration"] = {
+          "removed": list(old_declaration - new_declaration),
+          "added": list(new_declaration - old_declaration)
+        }
+
+      # Compare sub-APIs
+      old_sub_apis = api_info["sub_apis"]
+      new_sub_apis = json_new[api_type]["apis"][api_name]["sub_apis"]
+      common_sub_apis = set(old_sub_apis.keys()) & set(new_sub_apis.keys())
+
+      sub_apis_diff = {}
+
+      for sub_api in common_sub_apis:
+        old_declaration = set(old_sub_apis[sub_api])
+        new_declaration = set(new_sub_apis[sub_api])
+
+        if old_declaration != new_declaration:
+          sub_apis_diff[sub_api] = {
+            "removed": list(old_declaration - new_declaration),
+            "added": list(new_declaration - old_declaration)
+          }
+
+      # Check for removed sub-APIs
+      removed_sub_apis = set(old_sub_apis.keys()) - set(new_sub_apis.keys())
+      for removed_sub_api in removed_sub_apis:
+        sub_apis_diff[removed_sub_api] = {
+          "removed": old_sub_apis[removed_sub_api]
+        }
+
+      # Check for added sub-APIs
+      added_sub_apis = set(new_sub_apis.keys()) - set(old_sub_apis.keys())
+      for added_sub_api in added_sub_apis:
+        sub_apis_diff[added_sub_api] = {
+          "added": new_sub_apis[added_sub_api]
+        }
+
+      if sub_apis_diff:
+        api_diff["sub_apis"] = sub_apis_diff
+
+      if api_diff:
+        api_type_diff["apis"][api_name] = api_diff
+
+    if api_type_diff["apis"]:
+      diff_report[api_type] = api_type_diff
+
+  return diff_report
 
 
-def api_diff(merged_file, base_file):
-  file_extension = merged_file.split(".")[1]
-  if file_extension == OBJC_EXTENSION:
-    pr_apis = get_objc_public_apis(json.load(open(merged_file)))
-    base_apis = get_objc_public_apis(json.load(open(base_file)))
+def print_diff_report_text(diff_report):
+    if not diff_report:
+      print("No differences found.")
+      return
 
-    pr_only_apis = get_objc_diff(pr_apis, base_apis)
-    base_only_apis = get_objc_diff(base_apis, pr_apis)
-    logging.info("Added APIs")
-    print_objc_diff(pr_only_apis)
-    logging.info("\nRemoved APIS")
-    print_objc_diff(base_only_apis)
-  elif file_extension == SWIFT_EXTENSION:
-    pr_apis = get_swift_public_apis(json.load(open(merged_file)))
-    base_apis = get_swift_public_apis(json.load(open(base_file)))
+    text_output = []
+    for api_type, api_data in diff_report.items():
+      text_output.append(f"{api_type}")
 
-    pr_only_apis = get_swift_diff(pr_apis, base_apis)
-    base_only_apis = get_swift_diff(base_apis, pr_apis)
-    logging.info("Added APIs")
-    print_swift_diff(pr_only_apis)
-    logging.info("\nRemoved APIS")
-    print_swift_diff(base_only_apis)
+      for api_name, api_info in api_data["apis"].items():
+        text_output.append(f"  {api_name}")
+        if "declaration" in api_info:
+          for status, declarations in api_info["declaration"].items():
+            for declaration in declarations:
+              text_output.append(f"      *{status}*: {declaration}")
 
+        if "sub_apis" in api_info:
+          for sub_api_name, sub_api_diff in api_info["sub_apis"].items():
+            for status, declarations in sub_api_diff.items():
+              text_output.append(f"    *{status}*: {sub_api_name}")
+              for declaration in declarations:
+                text_output.append(f"        {declaration}")
 
-def get_swift_public_apis(api_json):
-  # key: file name
-  # value: all classes and functions
-  # only one key, value pair
-  for key, value in api_json.items():
-    # filter out non-public classes
-    public_apis = [sc for sc in value["key.substructure"] if "key.accessibility" in sc and sc["key.accessibility"] == "source.lang.swift.accessibility.public"]
-    for sc in public_apis:
-      # filter out non-public functions
-      sc["key.substructure"] = [f for f in sc["key.substructure"] if "key.accessibility" in f and f["key.accessibility"] == "source.lang.swift.accessibility.public"]
-  return public_apis
+    return "\n".join(text_output)
 
 
-def get_swift_diff(target, base):
-  diff = {"class":[], "function":[]}
+def print_diff_report_markdown(diff_report):
+  if not diff_report:
+    print("No differences found.")
+    return
 
-  for tc in target:
-    for bc in base:
-      # check for same public classes
-      if tc["key.kind"] == bc["key.kind"] and tc["key.name"] == bc["key.name"]:
-        # check for same public functions
-        for tf in tc["key.substructure"]:
-          if "key.typename" in tf:
-            for bf in bc["key.substructure"]:
-              if tf["key.kind"] == bf["key.kind"] and tf["key.name"] == bf["key.name"] and tf["key.typename"] == bf["key.typename"]:
-                break
-            else:
-              diff["function"].append(tf)
-        break
-    else:
-      diff["class"].append(tc)
-  return diff
+  markdown_output = []
+  for api_type, api_data in diff_report.items():
+    markdown_output.append(f"### {api_type}")
 
+    for api_name, api_info in api_data["apis"].items():
+      markdown_output.append(f"#### `{api_name}`")
+      if "declaration" in api_info:
+        markdown_output.append("##### Declaration changed:")
+        for status, declarations in api_info["declaration"].items():
+          for declaration in declarations:
+            markdown_output.append(f"- **{status}**: `{declaration}`")
 
-def print_swift_diff(diff):
-  for c in diff["class"]:
-    logging.info(f'{c["key.name"]}')
-  for f in diff["function"]:
-    logging.info(f'Function: public {KEY_KIND[f["key.kind"]]} func {f["key.name"]} -> {f["key.typename"]}')
+      if "sub_apis" in api_info:
+        for sub_api_name, sub_api_diff in api_info["sub_apis"].items():
+          for status, declarations in sub_api_diff.items():
+            markdown_output.append(f"###### **{status}**: `{sub_api_name}`")
+            for declaration in declarations:
+              markdown_output.append(f" - `{declaration}`")
 
-
-def get_objc_public_apis(api_json):
-  for key, value in api_json[0].items():
-    return value["key.substructure"]
-
-
-def get_objc_diff(target, base):
-  diff = {"class":[], "function":[]}
-
-  for tc in target:
-    for bc in base:
-      # check for same public classes
-      if tc["key.kind"] == bc["key.kind"] and tc["key.name"] == bc["key.name"] and tc["key.parsed_declaration"] == bc["key.parsed_declaration"]:
-        # check for same public functions
-        if "key.substructure" in tc:
-          for tf in tc["key.substructure"]:
-            for bf in bc["key.substructure"]:
-              if tf["key.kind"] == bf["key.kind"] and tf["key.name"] == bf["key.name"] and tf["key.parsed_declaration"] == bf["key.parsed_declaration"]:
-                break
-            else:
-              diff["function"].append(tf)
-        break
-    else:
-      diff["class"].append(tc)
-  return diff
-
-
-def print_objc_diff(diff):
-  for c in diff["class"]:
-    logging.info(f'Class: {c["key.kind"]} {c["key.name"]}')
-  for f in diff["function"]:
-    logging.info(f'OBJC Function: {f["key.parsed_declaration"]}')
-  for f in diff["function"]:
-    if "key.swift_declaration" in f:
-      logging.info(f'SWIFT Function: {f["key.swift_declaration"]}')
+  return "\n".join(markdown_output)
 
 
 def parse_cmdline_args():
