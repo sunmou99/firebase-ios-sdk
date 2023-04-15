@@ -52,7 +52,7 @@ OBJC_MODULE = [
   "RemoteConfig",
 ]
 
-# Main function
+
 def main():
   logging.getLogger().setLevel(logging.INFO)
 
@@ -72,19 +72,13 @@ def main():
     api_doc_path = os.path.join(output_dir, "doc", module)
     build_api_doc(module, api_doc_path)
 
-    module_data = parse_module(api_doc_path)
-    output_path = os.path.join(output_dir, "module_data.json")
-    logging.info(f"Writing module data to {output_path}")
-    with open(output_path, "w") as f:
-      f.write(json.dumps(module_data, indent=2))
+    module_api_container = parse_module(api_doc_path)
+    parse_api(api_doc_path, module_api_container)
 
-    api_data_container = {}
-    for _, api_abstract in module_data.items():
-        parse_api(api_doc_path, api_abstract, api_data_container)
     output_path = os.path.join(output_dir, "api_data.json")
     logging.info(f"Writing API data to {output_path}")
     with open(output_path, "w") as f:
-      f.write(json.dumps(api_data_container, indent=2))
+      f.write(json.dumps(module_api_container, indent=2))
 
 
 def collect_module_info():
@@ -124,14 +118,14 @@ def build_api_doc(module, output_dir):
                               shell=True, 
                               stdout=subprocess.PIPE)
     logging.info(result.stdout.read())
-  # elif module in OBJC_MODULE:
-  #   logging.info("------------")
-  #   logging.info(f"jazzy --objc --framework-root {module_path[module]} --umbrella-header {module_path[module]}/Public/{module}/{module}.h --output {output_dir}/{module}")
-  #   result = subprocess.Popen(f"jazzy --objc --framework-root {module_path[module]} --umbrella-header {module_path[module]}/Public/{module}/{module}.h --output {output_dir}/{module}", 
-  #                             universal_newlines=True, 
-  #                             shell=True, 
-  #                             stdout=subprocess.PIPE)
-  #   logging.info(result.stdout.read())
+  elif module in OBJC_MODULE:
+    logging.info("------------")
+    logging.info(f"jazzy --objc --framework-root {module_path[module]} --umbrella-header {module_path[module]}/Public/{module}/{module}.h --output {output_dir}/{module}")
+    result = subprocess.Popen(f"jazzy --objc --framework-root {module_path[module]} --umbrella-header {module_path[module]}/Public/{module}/{module}.h --output {output_dir}/{module}", 
+                              universal_newlines=True, 
+                              shell=True, 
+                              stdout=subprocess.PIPE)
+    logging.info(result.stdout.read())
 
 
 # Parse "${module}/index.html" and extract necessary information
@@ -140,8 +134,20 @@ def build_api_doc(module, output_dir):
 #   $(api_type_1): {
 #     "api_type_link": $(api_type_link),
 #     "apis": {
-#       $(api_name_1): $(api_link_1),
-#       $(api_name_2): $(api_link_2),
+#       $(api_name_1): {
+#         "api_link": $(api_link_1), 
+#         "declaration": [$(swift_declaration), $(objc_declaration)],
+#         "sub_apis": {
+#           $(sub_api_name_1): [$(swift_declaration), $(objc_declaration)],
+#           $(sub_api_name_2): [$(swift_declaration), $(objc_declaration)],
+#           ..
+#         }
+#       },
+#       $(api_name_2): {
+#         "api_link": $(api_link_2), 
+#         "declaration":[], 
+#         "sub_apis":{}
+#       },
 #       ..
 #     }
 #   },
@@ -150,7 +156,7 @@ def build_api_doc(module, output_dir):
 #   },
 # }
 def parse_module(api_doc_path):
-  module_data_container = {}
+  module_api_container = {}
   # Read the HTML content from the file
   index_link = f"{api_doc_path}/index.html"
   with open(index_link, "r") as file:
@@ -171,48 +177,35 @@ def parse_module(api_doc_path):
     for nav_group_task in nav_group.find_all("li", class_="nav-group-task"):
       api_name = nav_group_task.find("a").text
       api_link = nav_group_task.find("a")["href"]
-      apis[api_name] = api_link
+      apis[api_name] = {"api_link": api_link, "declaration":[], "sub_apis":{}}
 
-    module_data_container[api_type] = {
+    module_api_container[api_type] = {
       "api_type_link": api_type_link,
       "apis": apis
     }
 
-  return module_data_container
+  return module_api_container
 
 
 # Parse API html and extract necessary information. e.g. ${module}/Classes.html
-# e.g
-# {
-#   $(api_name_1): {
-#     "declaration": [$(swift_declaration), (objc_declaration)],
-#     "sub_apis": {
-#       $(sub_api_name_1): [$(swift_declaration), (objc_declaration)],
-#       $(sub_api_name_2): [$(swift_declaration), (objc_declaration)],
-#       ..
-#     }
-#   },
-#   $(api_name_2): {
-#     ..
-#   },
-# }
-def parse_api(api_doc_path, api_abstract, api_data_container):
-  api_type_link = f'{api_doc_path}/{unquote(api_abstract["api_type_link"])}'
-  with open(api_type_link, "r") as file:
-    html_content = file.read()
+def parse_api(api_doc_path, module_api_container):
+  for api_type, api_type_abstract in module_api_container.items():
+    api_type_link = f'{api_doc_path}/{unquote(api_type_abstract["api_type_link"])}'
+    api_data_container = module_api_container[api_type]["apis"]
+    with open(api_type_link, "r") as file:
+      html_content = file.read()
 
-  # Parse the HTML content
-  soup = BeautifulSoup(html_content, "html.parser")
-  for api in soup.find("div", class_="task-group").find_all("li", class_="item"):
-    api_name = api.find("a", class_="token").text
-    api_data_container[api_name] = {"declaration":[], "sub_apis":{}}
-    for api_declaration in api.find_all("div", class_="language"):
-      api_declaration_text = ' '.join(api_declaration.stripped_strings)
-      api_data_container[api_name]["declaration"].append(api_declaration_text)
+    # Parse the HTML content
+    soup = BeautifulSoup(html_content, "html.parser")
+    for api in soup.find("div", class_="task-group").find_all("li", class_="item"):
+      api_name = api.find("a", class_="token").text
+      for api_declaration in api.find_all("div", class_="language"):
+        api_declaration_text = ' '.join(api_declaration.stripped_strings)
+        api_data_container[api_name]["declaration"].append(api_declaration_text)
 
-  for api, api_link in api_abstract["apis"].items():
-    if api_link.endswith(".html"):
-      parse_sub_api(f'{api_doc_path}/{unquote(api_link)}', api_data_container[api])
+    for api, api_abstruct in api_type_abstract["apis"].items():
+      if api_abstruct["api_link"].endswith(".html"):
+        parse_sub_api(f'{api_doc_path}/{unquote(api_abstruct["api_link"])}', api_data_container[api]["sub_apis"])
 
 
 # Parse SUB_API html and extract necessary information. e.g. ${module}/Classes/${class_name}.html
@@ -223,10 +216,10 @@ def parse_sub_api(api_link, sub_api_data_container):
   soup = BeautifulSoup(html_content, "html.parser")
   for s_api in soup.find("div", class_="task-group").find_all("li", class_="item"):
     api_name = s_api.find("a", class_="token").text
-    sub_api_data_container["sub_apis"][api_name] = []
+    sub_api_data_container[api_name] = []
     for api_declaration in s_api.find_all("div", class_="language"):
       api_declaration_text = ' '.join(api_declaration.stripped_strings)
-      sub_api_data_container["sub_apis"][api_name].append(api_declaration_text)
+      sub_api_data_container[api_name].append(api_declaration_text)
 
 
 def parse_cmdline_args():
