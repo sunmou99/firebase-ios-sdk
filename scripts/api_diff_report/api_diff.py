@@ -43,66 +43,58 @@ def main():
   print(print_diff_report_markdown(diff))
 
 
-def generate_diff(json_new, json_old):
-  diff_report = {}
+def generate_diff(new_api_json, old_api_json):
+  diff = {}
+  for api_type in set(new_api_json.keys()).union(old_api_json.keys()):
+    if api_type not in old_api_json:
+      diff[api_type] = new_api_json[api_type]
+      diff[api_type]["status"] = "added"
+    elif api_type not in new_api_json:
+      diff[api_type] = old_api_json[api_type]
+      diff[api_type]["status"] = "removed"
+    else:
+      child_diff = generate_diff_1(new_api_json[api_type]["apis"], old_api_json[api_type]["apis"])
+      if child_diff:
+        diff[api_type] = {"apis": child_diff}
 
-  for api_type, api_data in json_old.items():
-    api_type_diff = {"apis": {}}
+  return diff
 
-    for api_name, api_info in api_data["apis"].items():
-      api_diff = {}
+def generate_diff_1(new_api_json, old_api_json):
+  diff = {}
+  for api_name in set(new_api_json.keys()).union(old_api_json.keys()):
+    if api_name not in old_api_json:
+      diff[api_name] = new_api_json[api_name]
+      diff[api_name]["status"] = "added"
+    elif api_name not in new_api_json:
+      diff[api_name] = old_api_json[api_name]
+      diff[api_name]["status"] = "removed"
+    elif new_api_json[api_name]["declaration"] != old_api_json[api_name]["declaration"]:
+      diff[api_name] = new_api_json[api_name]
+      diff[api_name]["declaration"].append(old_api_json[api_name]["declaration"])
+      diff[api_name]["status"] = "modified"
+    else:
+      child_diff = generate_diff_2(new_api_json[api_name]["sub_apis"], old_api_json[api_name]["sub_apis"])
+      if child_diff:
+        diff[api_name] = {"sub_apis": child_diff}
 
-      # Compare API declaration
-      old_declaration = set(api_info["declaration"])
-      new_declaration = set(json_new[api_type]["apis"][api_name]["declaration"])
+  return diff
 
-      if old_declaration != new_declaration:
-        api_diff["declaration"] = {
-          "removed": list(old_declaration - new_declaration),
-          "added": list(new_declaration - old_declaration)
-        }
 
-      # Compare sub-APIs
-      old_sub_apis = api_info["sub_apis"]
-      new_sub_apis = json_new[api_type]["apis"][api_name]["sub_apis"]
-      common_sub_apis = set(old_sub_apis.keys()) & set(new_sub_apis.keys())
+def generate_diff_2(new_api_json, old_api_json):
+  diff = {}
+  for sub_api_name in set(new_api_json.keys()).union(old_api_json.keys()):
+    if sub_api_name not in old_api_json:
+      diff[sub_api_name] = new_api_json[sub_api_name]
+      diff[sub_api_name]["status"] = "added"
+    elif sub_api_name not in new_api_json:
+      diff[sub_api_name] = old_api_json[sub_api_name]
+      diff[sub_api_name]["status"] = "removed"
+    elif new_api_json[sub_api_name]["declaration"] != old_api_json[sub_api_name]["declaration"]:
+      diff[sub_api_name] = new_api_json[sub_api_name]
+      diff[sub_api_name]["declaration"].append(old_api_json[sub_api_name]["declaration"])
+      diff[sub_api_name]["status"] = "modified"
 
-      sub_apis_diff = {}
-
-      for sub_api in common_sub_apis:
-        old_declaration = set(old_sub_apis[sub_api])
-        new_declaration = set(new_sub_apis[sub_api])
-
-        if old_declaration != new_declaration:
-          sub_apis_diff[sub_api] = {
-            "removed": list(old_declaration - new_declaration),
-            "added": list(new_declaration - old_declaration)
-          }
-
-      # Check for removed sub-APIs
-      removed_sub_apis = set(old_sub_apis.keys()) - set(new_sub_apis.keys())
-      for removed_sub_api in removed_sub_apis:
-        sub_apis_diff[removed_sub_api] = {
-          "removed": old_sub_apis[removed_sub_api]
-        }
-
-      # Check for added sub-APIs
-      added_sub_apis = set(new_sub_apis.keys()) - set(old_sub_apis.keys())
-      for added_sub_api in added_sub_apis:
-        sub_apis_diff[added_sub_api] = {
-          "added": new_sub_apis[added_sub_api]
-        }
-
-      if sub_apis_diff:
-        api_diff["sub_apis"] = sub_apis_diff
-
-      if api_diff:
-        api_type_diff["apis"][api_name] = api_diff
-
-    if api_type_diff["apis"]:
-      diff_report[api_type] = api_type_diff
-
-  return diff_report
+  return diff
 
 
 def print_diff_report_text(diff_report):
@@ -115,11 +107,11 @@ def print_diff_report_text(diff_report):
       text_output.append(f"{api_type}")
 
       for api_name, api_info in api_data["apis"].items():
-        text_output.append(f"  {api_name}")
         if "declaration" in api_info:
           for status, declarations in api_info["declaration"].items():
+            text_output.append(f"  *{status}*: {api_name}")
             for declaration in declarations:
-              text_output.append(f"      *{status}*: {declaration}")
+              text_output.append(f"    {declaration}")
 
         if "sub_apis" in api_info:
           for sub_api_name, sub_api_diff in api_info["sub_apis"].items():
