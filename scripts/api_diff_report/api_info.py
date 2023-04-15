@@ -138,8 +138,8 @@ def build_api_doc(module, output_dir):
 #         "api_link": $(api_link_1), 
 #         "declaration": [$(swift_declaration), $(objc_declaration)],
 #         "sub_apis": {
-#           $(sub_api_name_1): [$(swift_declaration), $(objc_declaration)],
-#           $(sub_api_name_2): [$(swift_declaration), $(objc_declaration)],
+#           $(sub_api_name_1): {"declaration": [$(swift_declaration), $(objc_declaration)]},
+#           $(sub_api_name_2): {"declaration": [$(swift_declaration), $(objc_declaration)]},
 #           ..
 #         }
 #       },
