@@ -51,14 +51,14 @@ OBJC_MODULE = [
 # Detect changed modules based on changed API files
 def detect_changed_modules(changed_api_files):
   all_modules = module_info()
-  changed_modules = []
+  changed_modules = {}
   for file_path in changed_api_files:
-    logging.info(file_path)
     for module in all_modules:
       if module["path"] in file_path:
-        changed_modules.append(module)
+        changed_modules[module["name"]] = module
 
-  print(json.dumps(all_modules, indent=2))
+  print(changed_modules.values())
+  return changed_modules.values()
 
 
 # modules that exist in both `.podspecs` and `Package.swift` 

@@ -62,7 +62,7 @@ NS_SWIFT_NAME(AppCheck)
 /// or an error if the request fails.
 - (void)tokenForcingRefresh:(BOOL)forcingRefresh
                  completion:
-                     (void (^)(FIRAppCheckToken *_Nullable token, NSError *_Nullable error))handler
+                     (void (^)(FIRAppCheckToken *_Nullable token, NSError * error))handler
     NS_SWIFT_NAME(token(forcingRefresh:completion:));
 
 /// Sets the `AppCheckProviderFactory` to use to generate
