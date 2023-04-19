@@ -18,39 +18,9 @@ import logging
 import os
 import subprocess
 import re
+import repo_module
 from urllib.parse import unquote
 from bs4 import BeautifulSoup
-
-# List of Swift and Objective-C modules
-SWIFT_MODULE = [
-  "AnalyticsSwift",
-  "DatabaseSwift",
-  "FirestoreSwift",
-  "Functions",
-  "InAppMessagingSwift",
-  "MLModelDownloader",
-  "RemoteConfigSwift",
-  "Storage",
-]
-
-OBJC_MODULE = [
-  "Analytics",
-  "AppCheck",
-  "AppDistribution",
-  "Auth",
-  "Core",
-  "ABTesting",
-  "Crash",
-  "Crashlytics",
-  "Database",
-  "DynamicLinks",
-  "Firestore",
-  "Installations",
-  "InAppMessaging",
-  "Messaging",
-  "Performance",
-  "RemoteConfig",
-]
 
 
 def main():
@@ -64,64 +34,43 @@ def main():
 
   # Detect changed modules based on changed API files
   changed_api_files = [f for f in args.file_list if f.endswith(".swift") or (f.endswith(".h") and "Public" in f)]
-  # changed_modules = detect_changed_modules(changed_api_files)
-  changed_modules = ["MLModelDownloader"]
+  changed_modules = repo_module.detect_changed_modules(changed_api_files)
+  # changed_modules = repo_module.module_info()
 
   # Generate API documentation and parse API declarations for each changed module
+  api_container = {}
   for module in changed_modules:
-    api_doc_path = os.path.join(output_dir, "doc", module)
+    api_doc_path = os.path.join(output_dir, "doc", module["name"])
     build_api_doc(module, api_doc_path)
 
     module_api_container = parse_module(api_doc_path)
     parse_api(api_doc_path, module_api_container)
 
-    output_path = os.path.join(output_dir, "api_data.json")
-    logging.info(f"Writing API data to {output_path}")
-    with open(output_path, "w") as f:
-      f.write(json.dumps(module_api_container, indent=2))
+    api_container[module["name"]] = {"path": api_doc_path, "api_types": module_api_container}
 
 
-def collect_module_info():
-  result = subprocess.Popen("swift package dump-package", 
-                            universal_newlines=True, 
-                            shell=True, 
-                            stdout=subprocess.PIPE)
-  logging.info("------------")
-  package_json = json.loads(result.stdout.read())
-
-  module_scheme = dict([(x['targets'][0], x['name']) for x in package_json['products']])
-  module_path = dict([(x['name'], x['path']) for x in  package_json['targets'] if x['name'] in module_scheme])
-  path_module = {v: k for k, v in module_path.items()}
-  
-  logging.info(json.dumps(module_scheme, indent=2))
-  logging.info(json.dumps(module_path, indent=2))
-
-
-# Detect changed modules based on changed API files
-def detect_changed_modules(changed_api_files):
-  changed_modules = set()
-  for file_path in changed_api_files:
-    logging.info(file_path)
-    for path, module in path_module.items():
-      if path in file_path:
-        changed_modules.add(module)
+  output_path = os.path.join(output_dir, 'api_info.json')
+  logging.info(f"Writing API data to {output_path}")
+  with open(output_path, "w") as f:
+    f.write(json.dumps(api_container, indent=2))
 
 
 # Build API documentation for a specific module
 def build_api_doc(module, output_dir):
-  if module in SWIFT_MODULE:
+  if module["name"] in repo_module.SWIFT_MODULE:
     logging.info("------------")
-    module = "Firebase"+module
-    logging.info(f"jazzy --module {module} --swift-build-tool xcodebuild --build-tool-arguments -scheme,{module},-destination,generic/platform=iOS,build --output {output_dir}")
-    result = subprocess.Popen(f"jazzy --module {module} --swift-build-tool xcodebuild --build-tool-arguments -scheme,{module},-destination,generic/platform=iOS,build --output {output_dir}", 
+    cmd = f'jazzy --module {module["name"]} --swift-build-tool xcodebuild --build-tool-arguments -scheme,{module["scheme"]},-destination,generic/platform=iOS,build --output {output_dir}'
+    logging.info(cmd)
+    result = subprocess.Popen(cmd, 
                               universal_newlines=True, 
                               shell=True, 
                               stdout=subprocess.PIPE)
     logging.info(result.stdout.read())
-  elif module in OBJC_MODULE:
+  elif module["name"] in repo_module.OBJC_MODULE:
     logging.info("------------")
-    logging.info(f"jazzy --objc --framework-root {module_path[module]} --umbrella-header {module_path[module]}/Public/{module}/{module}.h --output {output_dir}/{module}")
-    result = subprocess.Popen(f"jazzy --objc --framework-root {module_path[module]} --umbrella-header {module_path[module]}/Public/{module}/{module}.h --output {output_dir}/{module}", 
+    cmd = f'jazzy --objc --framework-root {module["path"]} --umbrella-header {module["umbrella-header"]} --output {output_dir}'
+    logging.info(cmd)
+    result = subprocess.Popen(cmd, 
                               universal_newlines=True, 
                               shell=True, 
                               stdout=subprocess.PIPE)
@@ -225,7 +174,7 @@ def parse_sub_api(api_link, sub_api_data_container):
 def parse_cmdline_args():
   parser = argparse.ArgumentParser()
   parser.add_argument('-f', '--file_list', nargs='+', default=[])
-  parser.add_argument('-o', '--output_dir', default="")
+  parser.add_argument('-o', '--output_dir', default="output_dir")
 
   args = parser.parse_args()
   return args
