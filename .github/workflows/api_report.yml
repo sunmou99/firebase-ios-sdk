@@ -29,6 +29,7 @@ jobs:
         run: |
           cp scripts/api_diff_report/api_info.py ~/api_info.py
           cp scripts/api_diff_report/api_diff.py ~/api_diff.py
+          cp scripts/api_diff_report/repo_module.py ~/repo_module.py
 
       - name: Generate API files for PR branch
         run: python ~/api_info.py -f ${{ steps.get_changed_files.outputs.file_list }} -o "~/merge_branch"
