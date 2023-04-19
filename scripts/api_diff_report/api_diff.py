@@ -27,55 +27,59 @@ def main():
   merged_branch = os.path.expanduser(args.merged_branch)
   base_branch = os.path.expanduser(args.base_branch)
   
-  new_api_json = json.load(open(os.path.join(merged_branch, "api_data.json")))
-  old_api_json = json.load(open(os.path.join(base_branch, "api_data.json")))  # Replace with the second JSON object you want to compare
+  new_api_json = json.load(open(os.path.join(merged_branch, "api_info.json")))
+  old_api_json = json.load(open(os.path.join(base_branch, "api_info.json")))  # Replace with the second JSON object you want to compare
 
   diff = generate_diff(new_api_json, old_api_json)
   print(json.dumps(diff, indent=2))
   print(generate_text_report(diff))
-  print(generate_markdown_report(diff))
+  # print(generate_markdown_report(diff))
 
 
-def generate_diff(new_api_json, old_api_json, level=0):
+def generate_diff(new_api, old_api, level="module"):
+  NEXT_LEVEL = {"module": "api_types", "api_types": "apis", "apis": "sub_apis"}
+  next_level = NEXT_LEVEL.get(level)
+
   diff = {}
-  for api_name in set(new_api_json.keys()).union(old_api_json.keys()):
-    if api_name not in old_api_json:
-      diff[api_name] = new_api_json[api_name]
-      diff[api_name]["status"] = "added"
-    elif api_name not in new_api_json:
-      diff[api_name] = old_api_json[api_name]
-      diff[api_name]["status"] = "removed"
-    elif "declaration" in new_api_json[api_name] and new_api_json[api_name]["declaration"] != old_api_json[api_name]["declaration"]:
-      diff[api_name] = new_api_json[api_name]
-      diff[api_name]["declaration"].append(old_api_json[api_name]["declaration"])
-      diff[api_name]["status"] = "modified"
-    elif level == 0 or level == 1:
-      key = "apis" if level == 0 else "sub_apis"
-      child_diff = generate_diff(new_api_json[api_name][key], old_api_json[api_name][key], level + 1)
+  for key in set(new_api.keys()).union(old_api.keys()):
+    if key not in old_api:
+      diff[key] = new_api[key]
+      diff[key]["status"] = "added"
+    elif key not in new_api:
+      diff[key] = old_api[key]
+      diff[key]["status"] = "removed"
+    else:
+      child_diff = generate_diff(new_api[key][next_level], old_api[key][next_level], level=next_level) if next_level else {}
+      declaration_diff = new_api[key].get("declaration") != old_api[key].get("declaration") if level in ["apis", "sub_apis"] else False
+
+      if not child_diff and not declaration_diff:
+        continue
+      
+      diff[key] = new_api[key]
       if child_diff:
-        diff[api_name] = {("apis" if level == 0 else "sub_apis"): child_diff}
+        diff[key][next_level] = child_diff
+      if declaration_diff:
+        diff[key]["status"] = "modified"
+        diff[key]["declaration"] = ["new_api"] + new_api[key]["declaration"] + ["old_api"] + old_api[key]["declaration"]
 
   return diff
 
-def generate_text_report(diff, indent=0):
-    report = ""
-    indent_str = "  " * indent
 
-    for api_type, api_data in diff.items():
-      if "status" in api_data:
-        report += f"{indent_str}{api_data['status']}:\n"
+def generate_text_report(diff, level=0):
+  report = ''
+  indent_str = '  ' * level
+  for key, value in diff.items():
+    if isinstance(value, dict): # filter out  ["path", "api_type_link", "api_link", "declaration", "status"]
+      if key not in ["api_types", "apis", "sub_apis"]:
+        status_text = f"[{value.get('status', '').capitalize()}] " if 'status' in value else ''
+        report += f"{indent_str}{status_text}{key}\n"
+        declaration_text = ' '.join(value.get('declaration', ''))
+        if declaration_text:
+          report += f"{indent_str}  Declaration: {declaration_text}\n"
       
-      report += f"{indent_str}  {api_type}:\n"
-      
-      if "apis" in api_data:
-        report += generate_text_report(api_data["apis"], indent + 1)
-      elif "sub_apis" in api_data:
-        report += generate_text_report(api_data["sub_apis"], indent + 1)
-      elif "declaration" in api_data:
-        for declaration in api_data["declaration"]:
-          report += f"{indent_str}    {declaration}\n"
+      report += generate_text_report(value, level=level + 1)
 
-    return report
+  return report
 
 
 def generate_markdown_report(diff, indent=0):

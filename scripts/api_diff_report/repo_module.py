@@ -57,7 +57,7 @@ def detect_changed_modules(changed_api_files):
       if module["path"] in file_path:
         changed_modules[module["name"]] = module
 
-  print(changed_modules.values())
+  # print(changed_modules.values())
   return changed_modules.values()
 
 
@@ -69,7 +69,7 @@ def module_info():
   all_modules = []
   for module in set(module_info_1.keys()).intersection(module_info_2.keys()):
     all_modules.append({"name": module, **module_info_1[module], **module_info_2[module]})
-  print(json.dumps(all_modules, indent=4))
+  # print(json.dumps(all_modules, indent=4))
   return all_modules
 
 
