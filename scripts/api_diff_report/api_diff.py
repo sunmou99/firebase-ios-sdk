@@ -16,7 +16,6 @@ import json
 import argparse
 import logging
 import os 
-import subprocess
 
 
 def main():

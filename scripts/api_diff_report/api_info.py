@@ -17,7 +17,6 @@ import argparse
 import logging
 import os
 import subprocess
-import re
 import repo_module
 from urllib.parse import unquote
 from bs4 import BeautifulSoup
@@ -150,6 +149,7 @@ def parse_api(api_doc_path, module_api_container):
       api_name = api.find("a", class_="token").text
       for api_declaration in api.find_all("div", class_="language"):
         api_declaration_text = ' '.join(api_declaration.stripped_strings)
+        api_declaration_text = remove_commentary_lines(api_declaration_text)
         api_data_container[api_name]["declaration"].append(api_declaration_text)
 
     for api, api_abstruct in api_type_abstract["apis"].items():
@@ -168,7 +168,18 @@ def parse_sub_api(api_link, sub_api_data_container):
     sub_api_data_container[api_name] = {"declaration":[]}
     for api_declaration in s_api.find_all("div", class_="language"):
       api_declaration_text = ' '.join(api_declaration.stripped_strings)
+      api_declaration_text = remove_commentary_lines(api_declaration_text)
       sub_api_data_container[api_name]["declaration"].append(api_declaration_text)
+
+
+def remove_commentary_lines(declaration):
+  lines = declaration.split("\n")
+  filtered_lines = []
+  for line in lines:
+    code, _, _ = line.partition("///")
+    if code:
+      filtered_lines.append(code.rstrip())
+  return "\n".join(filtered_lines)
 
 
 def parse_cmdline_args():
