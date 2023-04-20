@@ -1,0 +1,161 @@
+# Copyright 2023 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the 'License');
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an 'AS IS' BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+import os
+import logging
+import json
+import subprocess
+
+# List of Swift and Objective-C modules
+MODULE_LIST = [
+  'FirebaseABTesting', 
+  # 'FirebaseAnalytics',  # Not buildable. NO "source_files"
+  # 'FirebaseAnalyticsOnDeviceConversion', # Not buildable.
+  'FirebaseAnalyticsSwift', 
+  'FirebaseAppCheck', 
+  'FirebaseAppDistribution', 
+  'FirebaseAuth', 
+  'FirebaseCore', 
+  'FirebaseCrashlytics', 
+  'FirebaseDatabase', 
+  'FirebaseDatabaseSwift', 
+  'FirebaseDynamicLinks', 
+  'FirebaseFirestore', 
+  'FirebaseFirestoreSwift', 
+  'FirebaseFunctions', 
+  'FirebaseInAppMessaging', # NO "source_files"
+  # 'FirebaseInAppMessagingSwift',  # Not buildable.
+  'FirebaseInstallations', 
+  'FirebaseMessaging', 
+  'FirebaseMLModelDownloader', 
+  'FirebasePerformance', 
+  'FirebaseRemoteConfig', 
+  'FirebaseRemoteConfigSwift', 
+  # 'FirebaseSharedSwift', # Not buildable. No scheme named "FirebaseSharedSwift"
+  'FirebaseStorage', 
+  # 'GoogleAppMeasurement', # Not buildable. NO "source_files"
+  # 'GoogleAppMeasurementOnDeviceConversion' # Not buildable. NO "source_files"
+  ]
+
+
+def main():
+  module_info()
+
+# Detect changed modules based on changed API files
+def detect_changed_modules(changed_api_files):
+  all_modules = module_info()
+  changed_modules = {}
+  for file_path in changed_api_files:
+    for module in all_modules:
+      if module["path"] in file_path:
+        changed_modules[module["name"]] = module
+
+  # print(changed_modules.values())
+  return changed_modules.values()
+
+
+# retrive MODULE_LIST info from `.podspecs` 
+# includes: module name, source_files, public_header_files, language, umbrella_header, framework_root
+def module_info():
+  module_from_podspecs = module_info_from_podspecs()
+  module_list = {}
+  for k, v in module_from_podspecs.items():
+    if k in MODULE_LIST:
+      if k not in module_list:
+        module_list[k] = v
+        module_list[k]["language"] = "Objective-C" if v.get("public_header_files") else "Swift"
+        module_list[k]["umbrella_header"] = get_umbrella_header(v.get("public_header_files"), k)
+        module_list[k]["framework_root"] = get_framework_root(v.get("source_files"))
+  
+  print(json.dumps(module_list, indent=4))
+  return module_list
+
+
+# OBJC only
+# Get umbrella_header from public_header_files in .podspecs
+# Assume the umbrella_header is with the format: 
+#   {module_name}/Sources/Public/{module_name}/{module_name}.h
+def get_umbrella_header(public_header_files, module_name):
+  if public_header_files:
+    if isinstance(public_header_files, list):
+      return public_header_files[0].replace('*', module_name)
+    elif isinstance(public_header_files, str):
+      return public_header_files.replace('*', module_name)
+  return ""
+
+
+# OBJC only
+# Get framework_root from source_files in .podspecs
+# Assume the framework_root is with the format: 
+#   {module_name}/Sources or {module_name}/Source
+def get_framework_root(source_files, module_name):
+  if source_files:
+    for source_file in source_files:
+      if f"{module_name}/Sources" in source_file:
+        framework_root = source_file.split("/Sources")[0] + "/Sources"
+        return f"{module_name}/Sources"
+      if f"{module_name}/Source" in source_file:
+        framework_root = source_file.split("/Source")[0] + "/Source"
+        return f"{module_name}/Source"
+  return ""
+
+
+def module_info_from_package_swift():
+  result = subprocess.Popen("swift package dump-package", 
+                            universal_newlines=True, 
+                            shell=True, 
+                            stdout=subprocess.PIPE)
+  
+  package_json = json.loads(result.stdout.read())
+
+  module_scheme = dict([(x['targets'][0], x['name']) for x in package_json['products']])
+  module_path = dict([(x['name'], x['path']) for x in  package_json['targets'] if x['name'] in module_scheme])
+  
+  result = {}
+  for k,v in module_scheme.items():
+    result[k] = {"scheme": v, "path": module_path.get(k, "")}
+
+  return result
+
+
+def module_info_from_podspecs(root_dir=os.getcwd()):
+  result = {}
+  for filename in os.listdir(root_dir):
+    if filename.endswith(".podspec"):
+      podspec_data = parse_podspec(filename)
+      source_files = podspec_data.get("source_files")
+      if not podspec_data.get("source_files") and podspec_data.get("ios"):
+        source_files = podspec_data.get("ios").get("source_files")
+      result[podspec_data["name"]] = {"name": podspec_data["name"],
+                                      "source_files": source_files, 
+                                      "public_header_files": podspec_data.get("public_header_files")}
+  return result
+
+
+def parse_podspec(podspec_file):
+  result = subprocess.run(f"pod ipc spec {podspec_file}", 
+                        stdout=subprocess.PIPE, 
+                        stderr=subprocess.PIPE, 
+                        text=True, 
+                        shell=True)
+  if result.returncode != 0:
+    print(f"Error: {result.stderr}")
+    return None
+
+  # Parse the JSON output
+  podspec_data = json.loads(result.stdout)
+  return podspec_data
+
+if __name__ == '__main__':
+  main()
