@@ -75,8 +75,8 @@ def module_info():
       if k not in module_list:
         module_list[k] = v
         module_list[k]["language"] = "Objective-C" if v.get("public_header_files") else "Swift"
-        module_list[k]["umbrella_header"] = get_umbrella_header(v.get("public_header_files"), k)
-        module_list[k]["framework_root"] = get_framework_root(v.get("source_files"), k)
+        module_list[k]["umbrella_header"] = get_umbrella_header(k, v.get("public_header_files"))
+        module_list[k]["framework_root"] = get_framework_root(k, v.get("source_files"))
   
   print(json.dumps(module_list, indent=4))
   return module_list
@@ -86,7 +86,7 @@ def module_info():
 # Get umbrella_header from public_header_files in .podspecs
 # Assume the umbrella_header is with the format: 
 #   {module_name}/Sources/Public/{module_name}/{module_name}.h
-def get_umbrella_header(public_header_files, module_name):
+def get_umbrella_header(module_name, public_header_files):
   if public_header_files:
     if isinstance(public_header_files, list):
       return public_header_files[0].replace('*', module_name)
@@ -99,7 +99,7 @@ def get_umbrella_header(public_header_files, module_name):
 # Get framework_root from source_files in .podspecs
 # Assume the framework_root is with the format: 
 #   {module_name}/Sources or {module_name}/Source
-def get_framework_root(source_files, module_name):
+def get_framework_root(module_name, source_files):
   if source_files:
     for source_file in source_files:
       if f"{module_name}/Sources" in source_file:
