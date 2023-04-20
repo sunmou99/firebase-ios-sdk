@@ -76,7 +76,7 @@ def module_info():
         module_list[k] = v
         module_list[k]["language"] = "Objective-C" if v.get("public_header_files") else "Swift"
         module_list[k]["umbrella_header"] = get_umbrella_header(v.get("public_header_files"), k)
-        module_list[k]["framework_root"] = get_framework_root(v.get("source_files"))
+        module_list[k]["framework_root"] = get_framework_root(v.get("source_files"), k)
   
   print(json.dumps(module_list, indent=4))
   return module_list
