@@ -30,9 +30,9 @@ def main():
   old_api_json = json.load(open(os.path.join(base_branch, "api_info.json")))  # Replace with the second JSON object you want to compare
 
   diff = generate_diff(new_api_json, old_api_json)
-  print(json.dumps(diff, indent=2))
-  print(generate_text_report(diff))
-  # print(generate_markdown_report(diff))
+  logging.info(f"json diff: \n{json.dumps(diff, indent=2)}")
+  logging.info(f"plain text diff report: \n{generate_text_report(diff)}")
+  logging.info(f"markdown diff report: \n{generate_markdown_report(diff)}")
 
 
 def generate_diff(new_api, old_api, level="module"):
@@ -59,47 +59,93 @@ def generate_diff(new_api, old_api, level="module"):
         diff[key][next_level] = child_diff
       if declaration_diff:
         diff[key]["status"] = "modified"
-        diff[key]["declaration"] = ["new_api"] + new_api[key]["declaration"] + ["old_api"] + old_api[key]["declaration"]
+        diff[key]["declaration"] = ["ADDED:"] + new_api[key]["declaration"] + ["REMOVED:"] + old_api[key]["declaration"]
 
   return diff
 
 
-def generate_text_report(diff, level=0):
+def generate_text_report(diff, level=0, print_key=True):
   report = ''
   indent_str = '  ' * level
   for key, value in diff.items():
     if isinstance(value, dict): # filter out  ["path", "api_type_link", "api_link", "declaration", "status"]
-      if key not in ["api_types", "apis", "sub_apis"]:
-        status_text = f"[{value.get('status', '').capitalize()}] " if 'status' in value else ''
-        report += f"{indent_str}{status_text}{key}\n"
-        declaration_text = ' '.join(value.get('declaration', ''))
-        if declaration_text:
-          report += f"{indent_str}  Declaration: {declaration_text}\n"
-      
-      report += generate_text_report(value, level=level + 1)
+      if key in ["api_types", "apis", "sub_apis"]:
+        report += generate_text_report(value, level=level)
+      else:
+        status_text = f"{value.get('status', '').upper()}: " if 'status' in value else ''
+        if status_text:
+          if print_key:
+            report += f"{indent_str}{status_text}{key}\n"
+          else:
+            report += f"{indent_str}{status_text}\n"
+        if value.get('declaration'):
+          for d in value.get('declaration'):
+            report += f"{indent_str}{d}\n"
+        else:
+          report += f"{indent_str}{key}\n"
+        report += generate_text_report(value, level=level + 1)
 
   return report
 
 
-def generate_markdown_report(diff, indent=0):
-  report = ""
-  indent_str = "  " * indent
+def generate_markdown_report(diff, level=2):
+  report = ''
+  header_str = '#' * level
 
-  for api_type, api_data in diff.items():
-    if "status" in api_data:
-      report += f"{indent_str}{api_data['status']}:\n"
-
-    report += f"{indent_str}**{api_type}**:\n"
-    
-    if "apis" in api_data:
-      report += generate_markdown_report(api_data["apis"], indent + 1)
-    elif "sub_apis" in api_data:
-      report += generate_markdown_report(api_data["sub_apis"], indent + 1)
-    elif "declaration" in api_data:
-      for declaration in api_data["declaration"]:
-        report += f"{indent_str}  - `{declaration}`\n"
+  for key, value in diff.items():
+    if isinstance(value, dict):
+      if key in ["api_types", "apis", "sub_apis"]:
+        report += generate_markdown_report(value, level=level)
+      else:
+        current_status = value.get('status')
+        if current_status:
+          report += f"<details>\n<summary>\n[{current_status.upper()}] {key}\n</summary>\n\n"
+          declarations = value.get('declaration')
+          sub_report = generate_text_report(value, level=1, print_key=False)
+          detail = process_declarations(current_status, declarations, sub_report)
+          report += f"```diff\n{detail}\n```\n\n</details>\n\n"
+        else:
+          report += f"{header_str} {key}\n"
+          report += generate_markdown_report(value, level=level + 1)
 
   return report
+
+
+def process_declarations(current_status, declarations, sub_report):
+  detail = ""
+  if current_status == "modified":
+    for d in declarations:
+      if "ADDED" in d:
+        prefix = "+ "
+        continue
+      elif "REMOVED" in d:
+        prefix = "- "
+        continue
+      detail += f"{prefix}{d}\n"
+  else:
+    prefix = "+ " if current_status == "added" else "- "
+    for d in declarations:
+      detail += f"{prefix}{d}\n"
+    for line in sub_report.split("\n"):
+      if line:
+        detail += f"{prefix}{line}\n"
+
+  return categorize_declarations(detail)
+
+
+def categorize_declarations(detail):
+  lines = detail.split("\n")
+  
+  swift_lines = [line.replace("Swift", "") for line in lines if "Swift" in line]
+  objc_lines = [line.replace("Objective-C", "") for line in lines if "Objective-C" in line]
+
+  swift_detail = "Swift:\n" + "\n".join(swift_lines) if swift_lines else ""
+  objc_detail = "Objective-C:\n" + "\n".join(objc_lines) if objc_lines else ""
+
+  if not swift_detail and not objc_detail:
+    return detail
+  else:
+    return f'{swift_detail}\n{objc_detail}'.strip()
 
 
 def parse_cmdline_args():
