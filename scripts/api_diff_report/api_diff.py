@@ -35,8 +35,8 @@ def main():
   old_api_json = json.load(open(os.path.join(base_branch, api_info.API_INFO_FILE_NAME)))
 
   diff = generate_diff_json(new_api_json, old_api_json)
-  # logging.info(f"json diff: \n{json.dumps(diff, indent=2)}")
-  # logging.info(f"plain text diff report: \n{generate_text_report(diff)}")
+  logging.info(f"json diff: \n{json.dumps(diff, indent=2)}")
+  logging.info(f"plain text diff report: \n{generate_text_report(diff)}")
   logging.info(f"markdown diff report: \n{generate_markdown_report(diff)}")
 
 
@@ -132,19 +132,18 @@ def generate_markdown_report(diff, level=3):
 def process_declarations(current_status, declarations, sub_report):
   detail = ""
   if current_status == STATUS_MODIFIED:
-    for d in declarations:
-      if STATUS_ADD in d:
+    for line in (declarations + sub_report.split("\n")):
+      if STATUS_ADD in line:
         prefix = "+ "
         continue
-      elif STATUS_REMOVED in d:
+      elif STATUS_REMOVED in line:
         prefix = "- "
         continue
-      detail += f"{prefix}{d}\n"
+      if line:
+        detail += f"{prefix}{line}\n"
   else:
     prefix = "+ " if current_status == STATUS_ADD else "- "
-    for d in declarations:
-      detail += f"{prefix}{d}\n"
-    for line in sub_report.split("\n"):
+    for line in (declarations + sub_report.split("\n")):
       if line:
         detail += f"{prefix}{line}\n"
 

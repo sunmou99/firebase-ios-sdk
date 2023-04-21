@@ -120,21 +120,21 @@ public class ModelDownloader {
     return modelDownloader(app: defaultApp)
   }
 
-  /// Model Downloader with custom app.
-  public static func modelDownloader(app: FirebaseApp) -> ModelDownloader {
-    if let downloader = modelDownloaderDictionary[app.name] {
-      DeviceLogger.logEvent(level: .debug,
-                            message: ModelDownloader.DebugDescription.retrieveModelDownloader,
-                            messageCode: .downloaderInstanceRetrieved)
-      return downloader
-    } else {
-      let downloader = ModelDownloader(app: app)
-      modelDownloaderDictionary[app.name] = downloader
-      DeviceLogger.logEvent(level: .debug,
-                            message: ModelDownloader.DebugDescription.createModelDownloader,
-                            messageCode: .downloaderInstanceCreated)
-      return downloader
-    }
+  // /// Model Downloader with custom app.
+  // public static func modelDownloader(app: FirebaseApp) -> ModelDownloader {
+  //   if let downloader = modelDownloaderDictionary[app.name] {
+  //     DeviceLogger.logEvent(level: .debug,
+  //                           message: ModelDownloader.DebugDescription.retrieveModelDownloader,
+  //                           messageCode: .downloaderInstanceRetrieved)
+  //     return downloader
+  //   } else {
+  //     let downloader = ModelDownloader(app: app)
+  //     modelDownloaderDictionary[app.name] = downloader
+  //     DeviceLogger.logEvent(level: .debug,
+  //                           message: ModelDownloader.DebugDescription.createModelDownloader,
+  //                           messageCode: .downloaderInstanceCreated)
+  //     return downloader
+  //   }
   }
 
   /// Downloads a custom model to device or gets a custom model already on device, with an optional handler for progress.
