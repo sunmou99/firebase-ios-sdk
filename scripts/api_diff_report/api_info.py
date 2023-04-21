@@ -34,10 +34,15 @@ def main():
   if not os.path.exists(output_dir):
     os.makedirs(output_dir)
 
-  # Detect changed modules based on changed API files
+  # Detect changed modules based on changed files
   changed_api_files = get_api_files(args.file_list)
+  if not changed_api_files:
+    logging.info("No Changed API File Detected")
+    exit(1)
   changed_modules = icore_module.detect_changed_modules(changed_api_files)
-  # changed_modules = icore_module.module_info()
+  if not changed_modules:
+    logging.info("No Changed Module Detected")
+    exit(1)
 
   # Generate API documentation and parse API declarations for each changed module
   api_container = {}

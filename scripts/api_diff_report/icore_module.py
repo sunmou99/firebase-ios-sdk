@@ -31,11 +31,11 @@ MODULE_LIST = [
   'FirebaseAppDistribution', 
   'FirebaseAuth', 
   'FirebaseCore', 
-  'FirebaseCrashlytics', # Not buildable???
+  'FirebaseCrashlytics', 
   'FirebaseDatabase', 
   'FirebaseDatabaseSwift', 
   'FirebaseDynamicLinks', 
-  'FirebaseFirestore', # Not buildable???
+  'FirebaseFirestore', 
   'FirebaseFirestoreSwift', 
   'FirebaseFunctions', 
   'FirebaseInAppMessaging',
