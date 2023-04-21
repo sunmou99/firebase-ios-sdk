@@ -62,7 +62,7 @@ def detect_changed_modules(changed_api_files):
   changed_modules = {}
   for file_path in changed_api_files:
     for k, v in all_modules.items():
-      if v["root_dir"] in file_path:
+      if v["root_dir"] and v["root_dir"] in file_path:
         changed_modules[k] = v
         break
 
@@ -84,7 +84,7 @@ def module_info():
         module_list[k]["umbrella_header"] = get_umbrella_header(k, v.get("public_header_files"))
         module_list[k]["root_dir"] = get_root_dir(k, v.get("source_files"))
   
-  print(f"all_module:\n{json.dumps(module_list, indent=4)}")
+  logging.info(f"all_module:\n{json.dumps(module_list, indent=4)}")
   return module_list
 
 
