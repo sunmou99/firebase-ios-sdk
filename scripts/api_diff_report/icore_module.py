@@ -61,9 +61,10 @@ def detect_changed_modules(changed_api_files):
   all_modules = module_info()
   changed_modules = {}
   for file_path in changed_api_files:
-    for module in all_modules:
-      if module["path"] in file_path:
-        changed_modules[module["name"]] = module
+    for k, v in all_modules.items():
+      if v["root_dir"] in file_path:
+        changed_modules[k] = v
+        break
 
   logging.info(f"changed_modules:\n{json.dumps(changed_modules, indent=4)}")
   return changed_modules
@@ -83,7 +84,7 @@ def module_info():
         module_list[k]["umbrella_header"] = get_umbrella_header(k, v.get("public_header_files"))
         module_list[k]["root_dir"] = get_root_dir(k, v.get("source_files"))
   
-  logging.info(f"all_module:\n{json.dumps(module_list, indent=4)}")
+  print(f"all_module:\n{json.dumps(module_list, indent=4)}")
   return module_list
 
 
@@ -128,10 +129,8 @@ def get_root_dir(module_name, source_files):
   if source_files:
     for source_file in source_files:
       if f"{module_name}/Sources" in source_file:
-        framework_root = source_file.split("/Sources")[0] + "/Sources"
         return f"{module_name}/Sources"
       if f"{module_name}/Source" in source_file:
-        framework_root = source_file.split("/Source")[0] + "/Source"
         return f"{module_name}/Source"
   return ""
 
