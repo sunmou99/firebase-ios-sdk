@@ -16,7 +16,12 @@ import json
 import argparse
 import logging
 import os 
+import api_info
 
+STATUS_ADD = "ADDED"
+STATUS_REMOVED = "REMOVED"
+STATUS_MODIFIED = "MODIFIED"
+STATUS_ERROR = "BUILD ERROR"
 
 def main():
   logging.getLogger().setLevel(logging.INFO)
@@ -26,16 +31,16 @@ def main():
   merged_branch = os.path.expanduser(args.merged_branch)
   base_branch = os.path.expanduser(args.base_branch)
   
-  new_api_json = json.load(open(os.path.join(merged_branch, "api_info.json")))
-  old_api_json = json.load(open(os.path.join(base_branch, "api_info.json")))  # Replace with the second JSON object you want to compare
+  new_api_json = json.load(open(os.path.join(merged_branch, api_info.API_INFO_FILE_NAME)))
+  old_api_json = json.load(open(os.path.join(base_branch, api_info.API_INFO_FILE_NAME)))
 
-  diff = generate_diff(new_api_json, old_api_json)
-  logging.info(f"json diff: \n{json.dumps(diff, indent=2)}")
-  logging.info(f"plain text diff report: \n{generate_text_report(diff)}")
+  diff = generate_diff_json(new_api_json, old_api_json)
+  # logging.info(f"json diff: \n{json.dumps(diff, indent=2)}")
+  # logging.info(f"plain text diff report: \n{generate_text_report(diff)}")
   logging.info(f"markdown diff report: \n{generate_markdown_report(diff)}")
 
 
-def generate_diff(new_api, old_api, level="module"):
+def generate_diff_json(new_api, old_api, level="module"):
   NEXT_LEVEL = {"module": "api_types", "api_types": "apis", "apis": "sub_apis"}
   next_level = NEXT_LEVEL.get(level)
 
@@ -43,12 +48,19 @@ def generate_diff(new_api, old_api, level="module"):
   for key in set(new_api.keys()).union(old_api.keys()):
     if key not in old_api:
       diff[key] = new_api[key]
-      diff[key]["status"] = "added"
+      diff[key]["status"] = STATUS_ADD
+      if diff[key].get("declaration"):
+        diff[key]["declaration"] = [STATUS_ADD] + diff[key]["declaration"]
     elif key not in new_api:
       diff[key] = old_api[key]
-      diff[key]["status"] = "removed"
+      diff[key]["status"] = STATUS_REMOVED
+      if diff[key].get("declaration"):
+        diff[key]["declaration"] = [STATUS_ADD] + diff[key]["declaration"]
+    # If a "module" exist but have no content (e.g. doc_path), it must have a build error
+    elif level == "module" and (not new_api[key]["path"] or not old_api[key]["path"]):
+      diff[key] = {"status": STATUS_ERROR}
     else:
-      child_diff = generate_diff(new_api[key][next_level], old_api[key][next_level], level=next_level) if next_level else {}
+      child_diff = generate_diff_json(new_api[key][next_level], old_api[key][next_level], level=next_level) if next_level else {}
       declaration_diff = new_api[key].get("declaration") != old_api[key].get("declaration") if level in ["apis", "sub_apis"] else False
 
       if not child_diff and not declaration_diff:
@@ -57,9 +69,9 @@ def generate_diff(new_api, old_api, level="module"):
       diff[key] = new_api[key]
       if child_diff:
         diff[key][next_level] = child_diff
-      if declaration_diff:
-        diff[key]["status"] = "modified"
-        diff[key]["declaration"] = ["ADDED:"] + new_api[key]["declaration"] + ["REMOVED:"] + old_api[key]["declaration"]
+      if declaration_diff: 
+        diff[key]["status"] = STATUS_MODIFIED
+        diff[key]["declaration"] = [STATUS_ADD] + new_api[key]["declaration"] + [STATUS_REMOVED] + old_api[key]["declaration"]
 
   return diff
 
@@ -72,7 +84,7 @@ def generate_text_report(diff, level=0, print_key=True):
       if key in ["api_types", "apis", "sub_apis"]:
         report += generate_text_report(value, level=level)
       else:
-        status_text = f"{value.get('status', '').upper()}: " if 'status' in value else ''
+        status_text = f"{value.get('status', '')}: " if 'status' in value else ''
         if status_text:
           if print_key:
             report += f"{indent_str}{status_text}{key}\n"
@@ -88,7 +100,7 @@ def generate_text_report(diff, level=0, print_key=True):
   return report
 
 
-def generate_markdown_report(diff, level=2):
+def generate_markdown_report(diff, level=3):
   report = ''
   header_str = '#' * level
 
@@ -99,31 +111,37 @@ def generate_markdown_report(diff, level=2):
       else:
         current_status = value.get('status')
         if current_status:
-          report += f"<details>\n<summary>\n[{current_status.upper()}] {key}\n</summary>\n\n"
-          declarations = value.get('declaration')
-          sub_report = generate_text_report(value, level=1, print_key=False)
-          detail = process_declarations(current_status, declarations, sub_report)
-          report += f"```diff\n{detail}\n```\n\n</details>\n\n"
+          if level==3: # Module level: Always print out module name as title
+            report +=  f"{header_str} {key} [{current_status}]\n"
+          if current_status != STATUS_ERROR: # ADDED,REMOVED,MODIFIED
+            report += f"<details>\n<summary>\n[{current_status}] {key}\n</summary>\n\n"
+            declarations = value.get('declaration', [])
+            sub_report = generate_text_report(value, level=1, print_key=False)
+            detail = process_declarations(current_status, declarations, sub_report)
+            report += f"```diff\n{detail}\n```\n\n</details>\n\n"
         else:
           report += f"{header_str} {key}\n"
           report += generate_markdown_report(value, level=level + 1)
+
+        if level==3: # Module level: Always print out divider at the end
+          report +=  "-----\n"
 
   return report
 
 
 def process_declarations(current_status, declarations, sub_report):
   detail = ""
-  if current_status == "modified":
+  if current_status == STATUS_MODIFIED:
     for d in declarations:
-      if "ADDED" in d:
+      if STATUS_ADD in d:
         prefix = "+ "
         continue
-      elif "REMOVED" in d:
+      elif STATUS_REMOVED in d:
         prefix = "- "
         continue
       detail += f"{prefix}{d}\n"
   else:
-    prefix = "+ " if current_status == "added" else "- "
+    prefix = "+ " if current_status == STATUS_ADD else "- "
     for d in declarations:
       detail += f"{prefix}{d}\n"
     for line in sub_report.split("\n"):

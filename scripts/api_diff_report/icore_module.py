@@ -17,35 +17,39 @@ import logging
 import json
 import subprocess
 
+
+SWIFT = "Swift"
+OBJECTIVE_C = "Objective-C"
+
 # List of Swift and Objective-C modules
 MODULE_LIST = [
   'FirebaseABTesting', 
-  # 'FirebaseAnalytics',  # Not buildable. NO "source_files"
-  # 'FirebaseAnalyticsOnDeviceConversion', # Not buildable.
+  'FirebaseAnalytics',  # Not buildable. NO "source_files"
+  'FirebaseAnalyticsOnDeviceConversion', # Not buildable.
   'FirebaseAnalyticsSwift', 
   'FirebaseAppCheck', 
   'FirebaseAppDistribution', 
   'FirebaseAuth', 
   'FirebaseCore', 
-  'FirebaseCrashlytics', 
+  'FirebaseCrashlytics', # Not buildable???
   'FirebaseDatabase', 
   'FirebaseDatabaseSwift', 
   'FirebaseDynamicLinks', 
-  'FirebaseFirestore', 
+  'FirebaseFirestore', # Not buildable???
   'FirebaseFirestoreSwift', 
   'FirebaseFunctions', 
-  'FirebaseInAppMessaging', # NO "source_files"
-  # 'FirebaseInAppMessagingSwift',  # Not buildable.
+  'FirebaseInAppMessaging',
+  'FirebaseInAppMessagingSwift', 
   'FirebaseInstallations', 
   'FirebaseMessaging', 
   'FirebaseMLModelDownloader', 
   'FirebasePerformance', 
   'FirebaseRemoteConfig', 
   'FirebaseRemoteConfigSwift', 
-  # 'FirebaseSharedSwift', # Not buildable. No scheme named "FirebaseSharedSwift"
+  'FirebaseSharedSwift', # Not buildable. No scheme named "FirebaseSharedSwift"
   'FirebaseStorage', 
-  # 'GoogleAppMeasurement', # Not buildable. NO "source_files"
-  # 'GoogleAppMeasurementOnDeviceConversion' # Not buildable. NO "source_files"
+  'GoogleAppMeasurement', # Not buildable. NO "source_files"
+  'GoogleAppMeasurementOnDeviceConversion' # Not buildable. NO "source_files"
   ]
 
 
@@ -61,8 +65,8 @@ def detect_changed_modules(changed_api_files):
       if module["path"] in file_path:
         changed_modules[module["name"]] = module
 
-  # print(changed_modules.values())
-  return changed_modules.values()
+  logging.info(f"changed_modules:\n{json.dumps(changed_modules, indent=4)}")
+  return changed_modules
 
 
 # retrive MODULE_LIST info from `.podspecs` 
@@ -74,12 +78,26 @@ def module_info():
     if k in MODULE_LIST:
       if k not in module_list:
         module_list[k] = v
-        module_list[k]["language"] = "Objective-C" if v.get("public_header_files") else "Swift"
+        module_list[k]["language"] = OBJECTIVE_C if v.get("public_header_files") else SWIFT
+        module_list[k]["scheme"] = get_scheme(k)
         module_list[k]["umbrella_header"] = get_umbrella_header(k, v.get("public_header_files"))
         module_list[k]["framework_root"] = get_framework_root(k, v.get("source_files"))
   
-  print(json.dumps(module_list, indent=4))
+  logging.info(f"all_module:\n{json.dumps(module_list, indent=4)}")
   return module_list
+
+
+# SWIFT only
+# Get scheme from module name in .podspecs
+# Assume the scheme is the same as the module name: 
+def get_scheme(module_name):
+  MODULE_SCHEME_PATCH = {
+    "FirebaseInAppMessagingSwift": "FirebaseInAppMessagingSwift-Beta",
+    }
+  if module_name in MODULE_SCHEME_PATCH:
+    return MODULE_SCHEME_PATCH[module_name]
+  
+  return module_name
 
 
 # OBJC only
@@ -150,7 +168,7 @@ def parse_podspec(podspec_file):
                         text=True, 
                         shell=True)
   if result.returncode != 0:
-    print(f"Error: {result.stderr}")
+    logging.info(f"Error: {result.stderr}")
     return None
 
   # Parse the JSON output

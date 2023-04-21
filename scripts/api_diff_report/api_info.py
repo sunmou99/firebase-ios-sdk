@@ -22,6 +22,8 @@ from urllib.parse import unquote
 from bs4 import BeautifulSoup
 
 
+API_INFO_FILE_NAME = 'api_info.json'
+
 def main():
   logging.getLogger().setLevel(logging.INFO)
 
@@ -47,11 +49,11 @@ def main():
       module_api_container = parse_module(api_doc_path)
       api_container[module["name"]] = {"path": api_doc_path, "api_types": module_api_container}
     else: # api doc fail to build
-      api_container[module["name"]] = {"path": ""}
+      api_container[module["name"]] = {"path": "", "api_types":{}}
 
-  output_path = os.path.join(output_dir, 'api_info.json')
-  logging.info(f"Writing API data to {output_path}")
-  with open(output_path, "w") as f:
+  api_info_path = os.path.join(output_dir, API_INFO_FILE_NAME)
+  logging.info(f"Writing API data to {api_info_path}")
+  with open(api_info_path, "w") as f:
     f.write(json.dumps(api_container, indent=2))
 
 
@@ -62,16 +64,16 @@ def get_api_files(file_list):
 
 # Build API documentation for a specific module
 def build_api_doc(module, output_dir, api_theme_dir):
-  if module["language"] == "Swift":
+  if module["language"] == icore_module.SWIFT:
     logging.info("------------")
-    cmd = f'jazzy --module {module["name"]} --swift-build-tool xcodebuild --build-tool-arguments -scheme,{module["name"]},-destination,generic/platform=iOS,build --output {output_dir} --theme {api_theme_dir}'
+    cmd = f'jazzy --module {module["name"]} --swift-build-tool xcodebuild --build-tool-arguments -scheme,{module["scheme"]},-destination,generic/platform=iOS,build --output {output_dir} --theme {api_theme_dir}'
     logging.info(cmd)
     result = subprocess.Popen(cmd, 
                               universal_newlines=True, 
                               shell=True, 
                               stdout=subprocess.PIPE)
     logging.info(result.stdout.read())
-  elif module["language"] == "Objective-C":
+  elif module["language"] == icore_module.OBJECTIVE_C:
     logging.info("------------")
     cmd = f'jazzy --objc --framework-root {module["framework_root"]} --umbrella-header {module["umbrella_header"]} --output {output_dir} --theme {api_theme_dir}'
     logging.info(cmd)
