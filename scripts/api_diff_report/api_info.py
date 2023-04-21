@@ -75,7 +75,7 @@ def build_api_doc(module, output_dir, api_theme_dir):
     logging.info(result.stdout.read())
   elif module["language"] == icore_module.OBJECTIVE_C:
     logging.info("------------")
-    cmd = f'jazzy --objc --framework-root {module["framework_root"]} --umbrella-header {module["umbrella_header"]} --output {output_dir} --theme {api_theme_dir}'
+    cmd = f'jazzy --objc --framework-root {module["root_dir"]} --umbrella-header {module["umbrella_header"]} --output {output_dir} --theme {api_theme_dir}'
     logging.info(cmd)
     result = subprocess.Popen(cmd, 
                               universal_newlines=True, 

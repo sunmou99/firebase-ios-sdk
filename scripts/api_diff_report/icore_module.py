@@ -81,7 +81,7 @@ def module_info():
         module_list[k]["language"] = OBJECTIVE_C if v.get("public_header_files") else SWIFT
         module_list[k]["scheme"] = get_scheme(k)
         module_list[k]["umbrella_header"] = get_umbrella_header(k, v.get("public_header_files"))
-        module_list[k]["framework_root"] = get_framework_root(k, v.get("source_files"))
+        module_list[k]["root_dir"] = get_root_dir(k, v.get("source_files"))
   
   logging.info(f"all_module:\n{json.dumps(module_list, indent=4)}")
   return module_list
@@ -96,7 +96,6 @@ def get_scheme(module_name):
     }
   if module_name in MODULE_SCHEME_PATCH:
     return MODULE_SCHEME_PATCH[module_name]
-  
   return module_name
 
 
@@ -117,7 +116,15 @@ def get_umbrella_header(module_name, public_header_files):
 # Get framework_root from source_files in .podspecs
 # Assume the framework_root is with the format: 
 #   {module_name}/Sources or {module_name}/Source
-def get_framework_root(module_name, source_files):
+def get_root_dir(module_name, source_files):
+  MODULE_ROOT_PATCH = {
+    "FirebaseFirestore": "Firestore/Source",
+    "FirebaseFirestoreSwift": "Firestore/Swift/Source",
+    "FirebaseCrashlytics": "Crashlytics/Crashlytics",
+    "FirebaseInAppMessagingSwift": "FirebaseInAppMessaging/Swift/Source",
+    }
+  if module_name in MODULE_ROOT_PATCH:
+    return MODULE_ROOT_PATCH[module_name]
   if source_files:
     for source_file in source_files:
       if f"{module_name}/Sources" in source_file:
