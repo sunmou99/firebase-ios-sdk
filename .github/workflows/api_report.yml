@@ -4,6 +4,7 @@ on: [pull_request]
 
 jobs:
   diff_report:
+    if: github.event.pull_request.base.ref == 'master'
     runs-on: macos-latest
 
     steps:
