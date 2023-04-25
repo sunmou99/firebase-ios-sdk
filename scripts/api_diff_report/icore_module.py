@@ -24,7 +24,7 @@ OBJECTIVE_C = "Objective-C"
 # List of Swift and Objective-C modules
 MODULE_LIST = [
   'FirebaseABTesting', 
-  'FirebaseAnalytics',  # Not buildable. NO "source_files"
+  'FirebaseAnalytics',  # Not buildable from source
   'FirebaseAnalyticsOnDeviceConversion', # Not buildable.
   'FirebaseAnalyticsSwift', 
   'FirebaseAppCheck', 
@@ -70,7 +70,8 @@ def detect_changed_modules(changed_api_files):
   return changed_modules
 
 
-# retrive MODULE_LIST info from `.podspecs` 
+# retrive moudle info in MODULE_LIST from `.podspecs` 
+# The moudle info helps to build Jazzy
 # includes: module name, source_files, public_header_files, language, umbrella_header, framework_root
 def module_info():
   module_from_podspecs = module_info_from_podspecs()
@@ -88,7 +89,8 @@ def module_info():
   return module_list
 
 
-# SWIFT only
+# Jazzy documentation Info
+# SWIFT only. 
 # Get scheme from module name in .podspecs
 # Assume the scheme is the same as the module name: 
 def get_scheme(module_name):
@@ -100,6 +102,7 @@ def get_scheme(module_name):
   return module_name
 
 
+# Jazzy documentation Info
 # OBJC only
 # Get umbrella_header from public_header_files in .podspecs
 # Assume the umbrella_header is with the format: 
@@ -113,9 +116,8 @@ def get_umbrella_header(module_name, public_header_files):
   return ""
 
 
-# OBJC only
-# Get framework_root from source_files in .podspecs
-# Assume the framework_root is with the format: 
+# Get source code root_dir from source_files in .podspecs
+# Assume the root_dir is with the format: 
 #   {module_name}/Sources or {module_name}/Source
 def get_root_dir(module_name, source_files):
   MODULE_ROOT_PATCH = {
@@ -180,6 +182,7 @@ def parse_podspec(podspec_file):
   # Parse the JSON output
   podspec_data = json.loads(result.stdout)
   return podspec_data
+
 
 if __name__ == '__main__':
   main()

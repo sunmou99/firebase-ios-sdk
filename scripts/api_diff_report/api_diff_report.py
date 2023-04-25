@@ -32,49 +32,78 @@ def main():
   
   merged_branch = os.path.expanduser(args.merged_branch)
   base_branch = os.path.expanduser(args.base_branch)
-  
   new_api_json = json.load(open(os.path.join(merged_branch, api_info.API_INFO_FILE_NAME)))
   old_api_json = json.load(open(os.path.join(base_branch, api_info.API_INFO_FILE_NAME)))
 
   diff = generate_diff_json(new_api_json, old_api_json)
-  logging.info(f"json diff: \n{json.dumps(diff, indent=2)}")
-  logging.info(f"plain text diff report: \n{generate_text_report(diff)}")
-  logging.info(f"markdown diff report title: \n{generate_markdown_title(args.commit, args.run_id)}")
   if diff:
+    logging.info(f"json diff: \n{json.dumps(diff, indent=2)}")
+    logging.info(f"plain text diff report: \n{generate_text_report(diff)}")
+    logging.info(f"markdown diff report title: \n{generate_markdown_title(args.commit, args.run_id)}")
     logging.info(f"markdown diff report: \n{generate_markdown_report(diff)}")
   else:
     logging.info("No API Diff Detected.")
 
 
+# diff_json only contains module & api that has a change. format:
+# {
+#   $(moduel_name_1): {
+#     "api_types": {
+#       $(api_type_1): {
+#         "apis": {
+#           $(api_1): {
+#             "declaration": [
+#               $(api_1_declaration)
+#             ],
+#             "sub_apis": {
+#               $(sub_api_1): {
+#                 "declaration": [
+#                   $(sub_api_1_declaration)
+#                 ]
+#               },
+#             },
+#             "status": $(diff_status)
+#           }
+#         }
+#       }
+#     }
+#   }
+# }
 def generate_diff_json(new_api, old_api, level="module"):
   NEXT_LEVEL = {"module": "api_types", "api_types": "apis", "apis": "sub_apis"}
   next_level = NEXT_LEVEL.get(level)
 
   diff = {}
   for key in set(new_api.keys()).union(old_api.keys()):
+    # Added API
     if key not in old_api:
       diff[key] = new_api[key]
       diff[key]["status"] = STATUS_ADD
       if diff[key].get("declaration"):
         diff[key]["declaration"] = [STATUS_ADD] + diff[key]["declaration"]
-    elif key not in new_api:
+    # Removed API
+    elif key not in new_api: 
       diff[key] = old_api[key]
       diff[key]["status"] = STATUS_REMOVED
       if diff[key].get("declaration"):
         diff[key]["declaration"] = [STATUS_ADD] + diff[key]["declaration"]
-    # If a "module" exist but have no content (e.g. doc_path), it must have a build error
+    # Moudle Build Error. If a "module" exist but have no content (e.g. doc_path), it must have a build error.
     elif level == "module" and (not new_api[key]["path"] or not old_api[key]["path"]):
       diff[key] = {"status": STATUS_ERROR}
     else:
       child_diff = generate_diff_json(new_api[key][next_level], old_api[key][next_level], level=next_level) if next_level else {}
       declaration_diff = new_api[key].get("declaration") != old_api[key].get("declaration") if level in ["apis", "sub_apis"] else False
 
-      if not child_diff and not declaration_diff:
+      # No changes at current level
+      if not child_diff and not declaration_diff: # no diff
         continue
       
       diff[key] = new_api[key]
+      # Changes at child level
       if child_diff:
         diff[key][next_level] = child_diff
+        
+      # Modified API (changes in API declaration)
       if declaration_diff: 
         diff[key]["status"] = STATUS_MODIFIED
         diff[key]["declaration"] = [STATUS_ADD] + new_api[key]["declaration"] + [STATUS_REMOVED] + old_api[key]["declaration"]
@@ -115,10 +144,9 @@ def generate_markdown_title(commit, run_id):
           "-----\n")
 
 
-def generate_markdown_report(diff, level=3):
+def generate_markdown_report(diff, level=0):
   report = ''
-  header_str = '#' * level
-
+  header_str = '#' * (level+3)
   for key, value in diff.items():
     if isinstance(value, dict):
       if key in ["api_types", "apis", "sub_apis"]:
@@ -126,7 +154,7 @@ def generate_markdown_report(diff, level=3):
       else:
         current_status = value.get('status')
         if current_status:
-          if level==3: # Module level: Always print out module name as title
+          if level==0: # Module level: Always print out module name as title
             report +=  f"{header_str} {key} [{current_status}]\n"
           if current_status != STATUS_ERROR: # ADDED,REMOVED,MODIFIED
             report += f"<details>\n<summary>\n[{current_status}] {key}\n</summary>\n\n"
@@ -134,16 +162,17 @@ def generate_markdown_report(diff, level=3):
             sub_report = generate_text_report(value, level=1, print_key=False)
             detail = process_declarations(current_status, declarations, sub_report)
             report += f"```diff\n{detail}\n```\n\n</details>\n\n"
-        else:
+        else: # no diff at current level
           report += f"{header_str} {key}\n"
-          report += generate_markdown_report(value, level=level + 1)
+          report += generate_markdown_report(value, level=level+1)
 
-        if level==3: # Module level: Always print out divider at the end
+        if level==0: # Module level: Always print out divider at the end
           report +=  "-----\n"
 
   return report
 
 
+# Diff syntax highlighting in Github Markdown
 def process_declarations(current_status, declarations, sub_report):
   detail = ""
   if current_status == STATUS_MODIFIED:
@@ -165,6 +194,7 @@ def process_declarations(current_status, declarations, sub_report):
   return categorize_declarations(detail)
 
 
+# Categorize API info by Swift and Objective-C
 def categorize_declarations(detail):
   lines = detail.split("\n")
   

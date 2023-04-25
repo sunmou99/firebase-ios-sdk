@@ -47,13 +47,13 @@ def main():
   # Generate API documentation and parse API declarations for each changed module
   api_container = {}
   for _, module in changed_modules.items():
-    api_doc_path = os.path.join(output_dir, "doc", module["name"])
-    build_api_doc(module, api_doc_path, api_theme_dir)
+    api_doc_dir = os.path.join(output_dir, "doc", module["name"])
+    build_api_doc(module, api_doc_dir, api_theme_dir)
 
-    if os.path.exists(api_doc_path):
-      module_api_container = parse_module(api_doc_path)
-      api_container[module["name"]] = {"path": api_doc_path, "api_types": module_api_container}
-    else: # api doc fail to build
+    if os.path.exists(api_doc_dir):
+      module_api_container = parse_module(api_doc_dir)
+      api_container[module["name"]] = {"path": api_doc_dir, "api_types": module_api_container}
+    else: # api doc fail to build. 
       api_container[module["name"]] = {"path": "", "api_types":{}}
 
   api_info_path = os.path.join(output_dir, API_INFO_FILE_NAME)
@@ -67,7 +67,7 @@ def get_api_files(file_list):
   return [f for f in file_list if f.endswith(".swift") or (f.endswith(".h") and "Public" in f)]
 
 
-# Build API documentation for a specific module
+# Use Jazzy to build API documentation for a specific module's source code
 def build_api_doc(module, output_dir, api_theme_dir):
   if module["language"] == icore_module.SWIFT:
     logging.info("------------")
@@ -126,7 +126,6 @@ def parse_module(api_doc_path):
   # Locate the element with class="nav-groups"
   nav_groups_element = soup.find("ul", class_="nav-groups")
   # Extract data and convert to JSON format
-  
   for nav_group in nav_groups_element.find_all("li", class_="nav-group-name"):
     api_type = nav_group.find("a").text
     api_type_link = nav_group.find("a")["href"]
