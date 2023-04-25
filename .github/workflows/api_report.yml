@@ -9,7 +9,7 @@ jobs:
     steps:
       - name: test
         run: |
-          echo "${{ github.event.pull_request.base.ref }"
+          echo "${{ github.event.pull_request.base.ref }}"
           echo "$GITHUB_BASE_REF"
       - name: Setup python
         uses: actions/setup-python@v4
