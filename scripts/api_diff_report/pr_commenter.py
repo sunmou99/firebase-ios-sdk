@@ -23,6 +23,8 @@ from requests.packages.urllib3.util.retry import Retry
 
 COMMENT_HIDDEN_IDENTIFIER = f'\r\n<hidden value="api-diff-report-comment"></hidden>\r\n'
 GITHUB_API_URL = 'https://api.github.com/repos/firebase/firebase-ios-sdk'
+PR_LABLE = "public-api-change"
+
 RETRIES = 3
 BACKOFF = 5
 RETRY_STATUS = (403, 500, 502, 504)
@@ -33,7 +35,21 @@ def main():
 
     # Parse command-line arguments
     args = parse_cmdline_args()
-    update_pr(args.token, args.pr_number, args.comment)
+
+    token = args.token
+    pr_number = args.pr_number
+    comment = COMMENT_HIDDEN_IDENTIFIER + args.comment
+    if comment:
+        add_label(token, pr_number, PR_LABLE)
+        comment = COMMENT_HIDDEN_IDENTIFIER + args.comment
+    else:
+        delete_label(token, pr_number, PR_LABLE)
+        comment = COMMENT_HIDDEN_IDENTIFIER +  '## Generating Apple API Diff Report...'
+    comment_id = get_comment_id(token, pr_number, COMMENT_HIDDEN_IDENTIFIER)
+    if not comment_id:
+        add_comment(token, pr_number, comment)
+    else:
+        update_comment(token, comment_id, comment)
 
 
 def requests_retry_session(retries=RETRIES,
@@ -49,15 +65,6 @@ def requests_retry_session(retries=RETRIES,
     session.mount('http://', adapter)
     session.mount('https://', adapter)
     return session
-
-def update_pr(token, issue_number, comment):
-  if comment:
-    comment = COMMENT_HIDDEN_IDENTIFIER + comment
-    comment_id = get_comment_id(token, issue_number, COMMENT_HIDDEN_IDENTIFIER)
-    if not comment_id:
-        add_comment(token, issue_number, comment)
-    else:
-        update_comment(token, comment_id, comment)
 
   
 def get_comment_id(token, issue_number, comment_identifier):

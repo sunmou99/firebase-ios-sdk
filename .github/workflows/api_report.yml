@@ -8,10 +8,17 @@ jobs:
     runs-on: macos-latest
 
     steps:
+      - name: Clean Diff Report in PR
+        run: |
+          python ~/api_diff_report/pr_commenter.py --comment "" \
+            --token ${{github.token}} \
+            --pr_number ${{github.event.pull_request.number}} 
+
       - name: test
         run: |
           echo "${{ github.event.pull_request.base.ref }}"
           echo "$GITHUB_BASE_REF"
+
       - name: Setup python
         uses: actions/setup-python@v4
         with:
@@ -49,7 +56,8 @@ jobs:
 
       - id: api_diff
         run: |
-          echo "markdown_report=$(python ~/api_diff_report/api_diff_report.py -m ~/merge_branch -b ~/base_branch -c $GITHUB_SHA -i ${{github.run_id}})" >> $GITHUB_OUTPUT
+          markdown_report=$(python ~/api_diff_report/api_diff_report.py -m "~/merge_branch" -b "~/base_branch" -c $GITHUB_SHA -i ${{github.run_id}})
+          echo "markdown_report=$markdown_report" >> $GITHUB_OUTPUT
 
       - name: Update Diff Report in PR
         run: |
