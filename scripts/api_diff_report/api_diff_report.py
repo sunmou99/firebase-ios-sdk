@@ -42,11 +42,9 @@ def main():
     if diff:
         logging.info(f'json diff: \n{json.dumps(diff, indent=2)}')
         logging.info(f'plain text diff report: \n{generate_text_report(diff)}')
-        logging.info(
-            f'markdown diff report title: \n{generate_markdown_title(args.commit, args.run_id)}'
-        )
-        logging.info(
-            f'markdown diff report: \n{generate_markdown_report(diff)}')
+        report = generate_markdown_title(args.commit, args.run_id)
+        report += generate_markdown_report(diff)
+        return report
     else:
         logging.info('No API Diff Detected.')
 
