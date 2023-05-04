@@ -8,17 +8,6 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - name: Clean Diff Report in PR
-        run: |
-          python ~/api_diff_report/pr_commenter.py --comment "" \
-            --token ${{github.token}} \
-            --pr_number ${{github.event.pull_request.number}} 
-
-      - name: test
-        run: |
-          echo "${{ github.event.pull_request.base.ref }}"
-          echo "$GITHUB_BASE_REF"
-
       - name: Setup python
         uses: actions/setup-python@v4
         with:
@@ -31,6 +20,16 @@ jobs:
           pip install pytz
           pip install requests
 
+      - name: Copy script
+        run: |
+          cp -a scripts/api_diff_report/. ~/api_diff_report
+
+      - name: Clean Diff Report in PR
+        run: |
+          python ~/api_diff_report/pr_commenter.py --comment "" \
+            --token ${{github.token}} \
+            --pr_number ${{github.event.pull_request.number}} 
+
       - name: Checkout PR branch
         uses: actions/checkout@v3
         with:
@@ -38,10 +37,6 @@ jobs:
 
       - id: get_changed_files
         run: echo "file_list=$(git diff --name-only -r HEAD^1 HEAD | tr '\n' ' ')" >> $GITHUB_OUTPUT
-
-      - name: Copy script
-        run: |
-          cp -a scripts/api_diff_report/. ~/api_diff_report
 
       - name: Generate API files for PR branch
         run: python ~/api_diff_report/api_info.py -f ${{ steps.get_changed_files.outputs.file_list }} -o "~/merge_branch" -t "~/api_diff_report/theme"

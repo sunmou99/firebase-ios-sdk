@@ -48,6 +48,7 @@ def main():
         print(report)
     else:
         logging.info('No API Diff Detected.')
+        print('No API Diff Detected.')
 
 
 def generate_diff_json(new_api, old_api, level='module'):
