@@ -49,7 +49,7 @@ jobs:
 
       - id: api_diff
         run: |
-          echo "markdown_report=$(python ~/api_diff_report/api_diff_report.py -m "~/merge_branch" -b "~/base_branch" -c $GITHUB_SHA -i ${{github.run_id}})" >> $GITHUB_OUTPUT
+          echo "markdown_report=$(python ~/api_diff_report/api_diff_report.py -m ~/merge_branch -b ~/base_branch -c $GITHUB_SHA -i ${{github.run_id}})" >> $GITHUB_OUTPUT
 
       - name: Update Diff Report in PR
         run: |
