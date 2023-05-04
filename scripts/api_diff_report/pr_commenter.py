@@ -21,24 +21,19 @@ from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
 
-_COMMENT_IDENTIFIER = "api-diff-report-comment"
-_COMMENT_HIDDEN_DIVIDER = f'\r\n<hidden value="{_COMMENT_IDENTIFIER}"></hidden>\r\n'
-BASE_URL = 'https://api.github.com'
-GITHUB_API_URL = '%s/repos/%s/%s' % (BASE_URL, "firebase", "firebase-ios-sdk")
-logging.set_verbosity(logging.INFO)
-
+COMMENT_HIDDEN_IDENTIFIER = f'\r\n<hidden value="api-diff-report-comment"></hidden>\r\n'
+GITHUB_API_URL = 'https://api.github.com/repos/firebase/firebase-ios-sdk'
 RETRIES = 3
 BACKOFF = 5
 RETRY_STATUS = (403, 500, 502, 504)
 TIMEOUT = 5
-TIMEOUT_LONG = 20
 
 def main():
     logging.getLogger().setLevel(logging.INFO)
 
     # Parse command-line arguments
     args = parse_cmdline_args()
-    update_pr_comment(args.token, args.pr_number, args.comment + _COMMENT_HIDDEN_DIVIDER)
+    update_pr(args.token, args.pr_number, args.comment)
 
 
 def requests_retry_session(retries=RETRIES,
@@ -55,12 +50,14 @@ def requests_retry_session(retries=RETRIES,
     session.mount('https://', adapter)
     return session
 
-def update_pr_comment(token, issue_number, comment):
-  comment_id = get_comment_id(token, issue_number, _COMMENT_HIDDEN_DIVIDER)
-  if not comment_id:
-    add_comment(token, issue_number, comment)
-  else:
-    update_comment(token, comment_id, comment)
+def update_pr(token, issue_number, comment):
+  if comment:
+    comment = COMMENT_HIDDEN_IDENTIFIER + comment
+    comment_id = get_comment_id(token, issue_number, COMMENT_HIDDEN_IDENTIFIER)
+    if not comment_id:
+        add_comment(token, issue_number, comment)
+    else:
+        update_comment(token, comment_id, comment)
 
   
 def get_comment_id(token, issue_number, comment_identifier):

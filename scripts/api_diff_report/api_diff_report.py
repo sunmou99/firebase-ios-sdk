@@ -44,7 +44,8 @@ def main():
         logging.info(f'plain text diff report: \n{generate_text_report(diff)}')
         report = generate_markdown_title(args.commit, args.run_id)
         report += generate_markdown_report(diff)
-        return report
+        # print markdown report as workflow output.
+        print(report)
     else:
         logging.info('No API Diff Detected.')
 

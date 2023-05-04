@@ -22,6 +22,7 @@ jobs:
           gem install jazzy
           pip install BeautifulSoup4
           pip install pytz
+          pip install requests
 
       - name: Checkout PR branch
         uses: actions/checkout@v3
