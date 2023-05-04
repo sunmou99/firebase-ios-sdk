@@ -38,7 +38,7 @@ def main():
 
     # Parse command-line arguments
     args = parse_cmdline_args()
-    update_pr_comment(args.token, args.pr_number, args.comment)
+    update_pr_comment(args.token, args.pr_number, args.comment + _COMMENT_HIDDEN_DIVIDER)
 
 
 def requests_retry_session(retries=RETRIES,
