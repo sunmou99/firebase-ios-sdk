@@ -20,6 +20,11 @@ jobs:
           pip install pytz
           pip install requests
 
+      - name: Checkout PR branch
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+
       - name: Copy script
         run: |
           cp -a scripts/api_diff_report/. ~/api_diff_report
@@ -29,11 +34,6 @@ jobs:
           python ~/api_diff_report/pr_commenter.py --comment "" \
             --token ${{github.token}} \
             --pr_number ${{github.event.pull_request.number}} 
-
-      - name: Checkout PR branch
-        uses: actions/checkout@v3
-        with:
-          fetch-depth: 2
 
       - id: get_changed_files
         run: echo "file_list=$(git diff --name-only -r HEAD^1 HEAD | tr '\n' ' ')" >> $GITHUB_OUTPUT
