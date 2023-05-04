@@ -29,11 +29,11 @@ jobs:
         run: |
           cp -a scripts/api_diff_report/. ~/api_diff_report
 
-      - name: Clean Diff Report in PR
-        run: |
-          python ~/api_diff_report/pr_commenter.py --comment "" \
-            --token ${{github.token}} \
-            --pr_number ${{github.event.pull_request.number}} 
+      # - name: Clean Diff Report in PR
+      #   run: |
+      #     python ~/api_diff_report/pr_commenter.py --comment "" \
+      #       --token ${{github.token}} \
+      #       --pr_number ${{github.event.pull_request.number}} 
 
       - id: get_changed_files
         run: echo "file_list=$(git diff --name-only -r HEAD^1 HEAD | tr '\n' ' ')" >> $GITHUB_OUTPUT
@@ -51,12 +51,11 @@ jobs:
 
       - id: api_diff
         run: |
-          markdown_report=$(python ~/api_diff_report/api_diff_report.py -m "~/merge_branch" -b "~/base_branch" -c $GITHUB_SHA -i ${{github.run_id}})
-          echo "markdown_report=$markdown_report" >> $GITHUB_OUTPUT
+          python ~/api_diff_report/api_diff_report.py -m "~/merge_branch" -b "~/base_branch" -c $GITHUB_SHA -i ${{github.run_id}} -o "~/diff_report"
 
       - name: Update Diff Report in PR
         run: |
-          python ~/api_diff_report/pr_commenter.py --comment ${{steps.api_diff.outputs.markdown_report}} \
+          python ~/api_diff_report/pr_commenter.py --comment "~/diff_report" \
             --token ${{github.token}} \
             --pr_number ${{github.event.pull_request.number}} 
 
@@ -67,4 +66,5 @@ jobs:
           path: | 
             ~/merge_branch
             ~/base_branch
+            ~/diff_report
           retention-days: 1

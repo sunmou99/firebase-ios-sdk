@@ -12,10 +12,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import os
 import json
 import logging
 import requests
 import argparse
+import api_diff_report
 
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
@@ -38,13 +40,16 @@ def main():
 
     token = args.token
     pr_number = args.pr_number
-    comment = COMMENT_HIDDEN_IDENTIFIER + args.comment
+
+    diff_report_file = os.path.join(os.path.expanduser(args.comment), api_diff_report.API_DIFF_FILE_NAME)
+    with open(diff_report_file, 'r') as file:
+        comment = file.read()
     if comment:
         add_label(token, pr_number, PR_LABLE)
         comment = COMMENT_HIDDEN_IDENTIFIER + args.comment
     else:
         delete_label(token, pr_number, PR_LABLE)
-        comment = COMMENT_HIDDEN_IDENTIFIER +  '## Generating Apple API Diff Report...'
+        comment = COMMENT_HIDDEN_IDENTIFIER +  '## No API diff detected'
     comment_id = get_comment_id(token, pr_number, COMMENT_HIDDEN_IDENTIFIER)
     if not comment_id:
         add_comment(token, pr_number, comment)

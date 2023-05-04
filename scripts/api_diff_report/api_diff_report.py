@@ -24,6 +24,7 @@ STATUS_ADD = 'ADDED'
 STATUS_REMOVED = 'REMOVED'
 STATUS_MODIFIED = 'MODIFIED'
 STATUS_ERROR = 'BUILD ERROR'
+API_DIFF_FILE_NAME = 'api_diff_report.markdown'
 
 
 def main():
@@ -44,11 +45,14 @@ def main():
         logging.info(f'plain text diff report: \n{generate_text_report(diff)}')
         report = generate_markdown_title(args.commit, args.run_id)
         report += generate_markdown_report(diff)
-        # print markdown report as workflow output.
-        print(report)
     else:
         logging.info('No API Diff Detected.')
-        print('No API Diff Detected.')
+        report = ""
+
+    api_report_path = os.path.join(args.output_dir, API_DIFF_FILE_NAME)
+    logging.info(f'Writing API diff report to {api_report_path}')
+    with open(api_report_path, 'w') as f:
+        f.write(json.dumps(report, indent=2))
 
 
 def generate_diff_json(new_api, old_api, level='module'):
@@ -250,6 +254,7 @@ def parse_cmdline_args():
     parser.add_argument('-b', '--base_branch')
     parser.add_argument('-c', '--commit')
     parser.add_argument('-i', '--run_id')
+    parser.add_argument('-o', '--output_dir', default='output_dir')
 
     args = parser.parse_args()
     return args
