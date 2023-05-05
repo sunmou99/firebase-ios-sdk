@@ -8,32 +8,22 @@ jobs:
     runs-on: macos-latest
 
     steps:
-      - name: Setup python
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.7
-
-      - name: Install Prerequsit
-        run:  |
-          gem install jazzy
-          pip install BeautifulSoup4
-          pip install pytz
-          pip install requests
-
       - name: Checkout PR branch
         uses: actions/checkout@v3
         with:
           fetch-depth: 2
 
       - name: Copy script
-        run: |
-          cp -a scripts/api_diff_report/. ~/api_diff_report
+        run: cp -a scripts/api_diff_report/. ~/api_diff_report
 
-      # - name: Clean Diff Report in PR
-      #   run: |
-      #     python ~/api_diff_report/pr_commenter.py --comment "" \
-      #       --token ${{github.token}} \
-      #       --pr_number ${{github.event.pull_request.number}} 
+      - name: Install Prerequisites
+        run:  ~/api_diff_report/prerequisite.sh
+
+      - name: Clean Diff Report Comment in PR
+        run: |
+          python ~/api_diff_report/pr_commenter.py --comment "" \
+            --token ${{github.token}} \
+            --pr_number ${{github.event.pull_request.number}} 
 
       - id: get_changed_files
         run: echo "file_list=$(git diff --name-only -r HEAD^1 HEAD | tr '\n' ' ')" >> $GITHUB_OUTPUT
@@ -41,7 +31,7 @@ jobs:
       - name: Generate API files for PR branch
         run: python ~/api_diff_report/api_info.py -f ${{ steps.get_changed_files.outputs.file_list }} -o "~/merge_branch" -t "~/api_diff_report/theme"
 
-      - name: Checkout master
+      - name: Checkout Base branch
         uses: actions/checkout@v3
         with:
           ref: ${{ github.base_ref }}
@@ -49,15 +39,16 @@ jobs:
       - name: Generate API files for Base branch
         run: python ~/api_diff_report/api_info.py -f ${{ steps.get_changed_files.outputs.file_list }} -o "~/base_branch" -t "~/api_diff_report/theme"
 
-      - id: api_diff
-        run: |
-          python ~/api_diff_report/api_diff_report.py -m "~/merge_branch" -b "~/base_branch" -c $GITHUB_SHA -i ${{github.run_id}} -o "~/diff_report"
+      - name: Generate API Diff Report
+        run: python ~/api_diff_report/api_diff_report.py -m "~/merge_branch" -b "~/base_branch" -o "~/diff_report"
 
-      - name: Update Diff Report in PR
+      - name: Update Diff Report Comment in PR
         run: |
-          python ~/api_diff_report/pr_commenter.py --comment "~/diff_report" \
+          python ~/api_diff_report/pr_commenter.py --report "~/diff_report" \
             --token ${{github.token}} \
-            --pr_number ${{github.event.pull_request.number}} 
+            --pr_number ${{github.event.pull_request.number}} \
+            --commit $GITHUB_SHA \
+            --run_id ${{github.run_id}}
 
       - uses: actions/upload-artifact@v3
         if: ${{ !cancelled() }}

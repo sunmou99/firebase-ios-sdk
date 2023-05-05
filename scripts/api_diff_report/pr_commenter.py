@@ -53,11 +53,11 @@ def main():
        report = generate_markdown_title(TITLE_PROGESS, commit, run_id)
        delete_label(token, pr_number, PR_LABLE)
     elif stage == STAGES_END:
-      diff_report_file = os.path.join(os.path.expanduser(args.comment), api_diff_report.API_DIFF_FILE_NAME)
+      diff_report_file = os.path.join(os.path.expanduser(args.report), api_diff_report.API_DIFF_FILE_NAME)
       with open(diff_report_file, 'r') as file:
-          comment = file.read()
-      if comment:
-          report = COMMENT_HIDDEN_IDENTIFIER + generate_markdown_title(TITLE_END_DIFF, commit, run_id) + comment
+          report_content = file.read()
+      if report_content:
+          report = COMMENT_HIDDEN_IDENTIFIER + generate_markdown_title(TITLE_END_DIFF, commit, run_id) + report_content
           add_label(token, pr_number, PR_LABLE)
       else:
           report = COMMENT_HIDDEN_IDENTIFIER + generate_markdown_title(TITLE_END_NO_DIFF, commit, run_id)
@@ -166,7 +166,7 @@ def delete_label(token, issue_number, label):
 def parse_cmdline_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-s', '--stage')
-    parser.add_argument('-c', '--comment')
+    parser.add_argument('-r', '--report')
     parser.add_argument('-t', '--token')
     parser.add_argument('-n', '--pr_number')
     parser.add_argument('-c', '--commit')
