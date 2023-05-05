@@ -18,19 +18,23 @@ import logging
 import requests
 import argparse
 import api_diff_report
+import datetime
+import pytz
 
 from requests.adapters import HTTPAdapter
 from requests.packages.urllib3.util.retry import Retry
 
 
-COMMENT_HIDDEN_IDENTIFIER = f'\r\n<hidden value="api-diff-report-comment"></hidden>\r\n'
-GITHUB_API_URL = 'https://api.github.com/repos/firebase/firebase-ios-sdk'
-PR_LABLE = "public-api-change"
+STAGES_PROGRESS = "progress"
+STAGES_END = "end"
 
-RETRIES = 3
-BACKOFF = 5
-RETRY_STATUS = (403, 500, 502, 504)
-TIMEOUT = 5
+TITLE_PROGESS = "## ⏳&nbsp; Detecing API diff in progress...\n"
+TITLE_END_DIFF = '## Apple API Diff Report\n'
+TITLE_END_NO_DIFF = "## ✅&nbsp; No API diff detected\n"
+
+COMMENT_HIDDEN_IDENTIFIER = f'\r\n<hidden value="api-diff-report-comment"></hidden>\r\n'
+GITHUB_API_URL = 'https://api.github.com/repos/sunmou99/firebase-ios-sdk'
+PR_LABLE = "public-api-change"
 
 def main():
     logging.getLogger().setLevel(logging.INFO)
@@ -38,23 +42,49 @@ def main():
     # Parse command-line arguments
     args = parse_cmdline_args()
 
+    stage = args.stage
     token = args.token
     pr_number = args.pr_number
+    commit = args.commit
+    run_id = args.run_id
 
-    diff_report_file = os.path.join(os.path.expanduser(args.comment), api_diff_report.API_DIFF_FILE_NAME)
-    with open(diff_report_file, 'r') as file:
-        comment = file.read()
-    if comment:
-        add_label(token, pr_number, PR_LABLE)
-        comment = COMMENT_HIDDEN_IDENTIFIER + args.comment
-    else:
-        delete_label(token, pr_number, PR_LABLE)
-        comment = COMMENT_HIDDEN_IDENTIFIER +  '## No API diff detected'
-    comment_id = get_comment_id(token, pr_number, COMMENT_HIDDEN_IDENTIFIER)
-    if not comment_id:
-        add_comment(token, pr_number, comment)
-    else:
-        update_comment(token, comment_id, comment)
+    report = ""
+    if stage == STAGES_PROGRESS:
+       report = generate_markdown_title(TITLE_PROGESS, commit, run_id)
+       delete_label(token, pr_number, PR_LABLE)
+    elif stage == STAGES_END:
+      diff_report_file = os.path.join(os.path.expanduser(args.comment), api_diff_report.API_DIFF_FILE_NAME)
+      with open(diff_report_file, 'r') as file:
+          comment = file.read()
+      if comment:
+          report = COMMENT_HIDDEN_IDENTIFIER + generate_markdown_title(TITLE_END_DIFF, commit, run_id) + comment
+          add_label(token, pr_number, PR_LABLE)
+      else:
+          report = COMMENT_HIDDEN_IDENTIFIER + generate_markdown_title(TITLE_END_NO_DIFF, commit, run_id)
+          delete_label(token, pr_number, PR_LABLE)
+
+    if report:
+      comment_id = get_comment_id(token, pr_number, COMMENT_HIDDEN_IDENTIFIER)
+      if not comment_id:
+          add_comment(token, pr_number, report)
+      else:
+          update_comment(token, comment_id, report)
+
+
+def generate_markdown_title(title, commit, run_id):
+    pst_now = datetime.datetime.utcnow().astimezone(
+        pytz.timezone('America/Los_Angeles'))
+    return (
+        title + 'Commit: %s\n' % commit +
+        'Last updated: %s \n' % pst_now.strftime('%a %b %e %H:%M %Z %G') +
+        '**[View workflow logs & download artifacts](https://github.com/sunmou99/firebase-ios-sdk/actions/runs/%s)**\n\n'
+        % run_id + '-----\n')
+
+
+RETRIES = 3
+BACKOFF = 5
+RETRY_STATUS = (403, 500, 502, 504)
+TIMEOUT = 5
 
 
 def requests_retry_session(retries=RETRIES,
@@ -135,9 +165,12 @@ def delete_label(token, issue_number, label):
 
 def parse_cmdline_args():
     parser = argparse.ArgumentParser()
+    parser.add_argument('-s', '--stage')
     parser.add_argument('-c', '--comment')
     parser.add_argument('-t', '--token')
     parser.add_argument('-n', '--pr_number')
+    parser.add_argument('-c', '--commit')
+    parser.add_argument('-i', '--run_id')
 
     args = parser.parse_args()
     return args

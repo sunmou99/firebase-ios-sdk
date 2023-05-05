@@ -17,8 +17,6 @@ import argparse
 import logging
 import os
 import api_info
-import datetime
-import pytz
 
 STATUS_ADD = 'ADDED'
 STATUS_REMOVED = 'REMOVED'
@@ -43,8 +41,7 @@ def main():
     if diff:
         logging.info(f'json diff: \n{json.dumps(diff, indent=2)}')
         logging.info(f'plain text diff report: \n{generate_text_report(diff)}')
-        report = generate_markdown_title(args.commit, args.run_id)
-        report += generate_markdown_report(diff)
+        report = generate_markdown_report(diff)
     else:
         logging.info('No API Diff Detected.')
         report = ""
@@ -166,16 +163,6 @@ def generate_text_report(diff, level=0, print_key=True):
     return report
 
 
-def generate_markdown_title(commit, run_id):
-    pst_now = datetime.datetime.utcnow().astimezone(
-        pytz.timezone('America/Los_Angeles'))
-    return (
-        '## Apple API Diff Report\n' + 'Commit: %s\n' % commit +
-        'Last updated: %s \n' % pst_now.strftime('%a %b %e %H:%M %Z %G') +
-        '**[View workflow logs & download artifacts](https://github.com/firebase/firebase-ios-sdk/actions/runs/%s)**\n\n'
-        % run_id + '-----\n')
-
-
 def generate_markdown_report(diff, level=0):
     report = ''
     header_str = '#' * (level + 3)
@@ -255,8 +242,6 @@ def parse_cmdline_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--merged_branch')
     parser.add_argument('-b', '--base_branch')
-    parser.add_argument('-c', '--commit')
-    parser.add_argument('-i', '--run_id')
     parser.add_argument('-o', '--output_dir', default='output_dir')
 
     args = parser.parse_args()
