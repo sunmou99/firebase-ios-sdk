@@ -36,7 +36,7 @@ jobs:
         run: echo "file_list=$(git diff --name-only -r HEAD^1 HEAD | tr '\n' ' ')" >> $GITHUB_OUTPUT
 
       - name: Generate API files for PR branch
-        run: python ~/api_diff_report/api_info.py -f ${{ steps.get_changed_files.outputs.file_list }} -o "~/merge_branch" -t "~/api_diff_report/theme"
+        run: python ~/api_diff_report/api_info.py -f ${{ steps.get_changed_files.outputs.file_list }} -o "~/pr_branch" -t "~/api_diff_report/theme"
 
       - name: Checkout Base branch
         uses: actions/checkout@v3
@@ -47,7 +47,7 @@ jobs:
         run: python ~/api_diff_report/api_info.py -f ${{ steps.get_changed_files.outputs.file_list }} -o "~/base_branch" -t "~/api_diff_report/theme"
 
       - name: Generate API Diff Report
-        run: python ~/api_diff_report/api_diff_report.py -m "~/merge_branch" -b "~/base_branch" -o "~/diff_report"
+        run: python ~/api_diff_report/api_diff_report.py -p "~/pr_branch" -b "~/base_branch" -o "~/diff_report"
 
       - name: Update Diff Report Comment in PR
         run: |
@@ -63,7 +63,7 @@ jobs:
         with:
           name: api_info
           path: | 
-            ~/merge_branch
+            ~/pr_branch
             ~/base_branch
             ~/diff_report
           retention-days: 1
