@@ -24,7 +24,7 @@ jobs:
         with:
           fetch-depth: 2
 
-      - name: Copy script
+      - name: Copy diff report tools
         run: cp -a scripts/api_diff_report/. ~/api_diff_report
 
       - name: Setup python
@@ -44,6 +44,7 @@ jobs:
             --run_id ${{github.run_id}}
 
       - id: get_changed_files
+        name: Get changed file list
         run: echo "file_list=$(git diff --name-only -r HEAD^1 HEAD | tr '\n' ' ')" >> $GITHUB_OUTPUT
 
       - name: Generate API files for PR branch
