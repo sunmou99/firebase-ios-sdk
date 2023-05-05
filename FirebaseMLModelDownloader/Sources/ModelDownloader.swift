@@ -26,6 +26,15 @@ public enum ModelDownloadType {
   case latestModel
 }
 
+public enum ModelDownloadTypeTest {
+  /// Get local model stored on device if available. If no local model on device, this is the same as `latestModel`.
+  case localModel
+  /// Get local model on device if available and update to latest model from server in the background. If no local model on device, this is the same as `latestModel`.
+  case localModelUpdateInBackground
+  /// Get latest model from server. Does not make a network call for model file download if local model matches the latest version on server.
+  case latestModel
+}
+
 /// Downloader to manage custom model downloads.
 public class ModelDownloader {
   /// Name of the app associated with this instance of ModelDownloader.
@@ -97,6 +106,14 @@ public class ModelDownloader {
 
   /// Model downloader with default app.
   public static func modelDownloader() -> ModelDownloader {
+    guard let defaultApp = FirebaseApp.app() else {
+      fatalError(ModelDownloader.ErrorDescription.defaultAppNotConfigured)
+    }
+    return modelDownloader(app: defaultApp)
+  }
+
+  /// Model downloader with default app.
+  public static func modelDownloaderTest() -> ModelDownloader {
     guard let defaultApp = FirebaseApp.app() else {
       fatalError(ModelDownloader.ErrorDescription.defaultAppNotConfigured)
     }
