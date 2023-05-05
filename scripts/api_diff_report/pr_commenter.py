@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 # Copyright 2023 Google LLC
 #
 # Licensed under the Apache License, Version 2.0 (the 'License');
@@ -28,9 +27,9 @@ from requests.packages.urllib3.util.retry import Retry
 STAGES_PROGRESS = "progress"
 STAGES_END = "end"
 
-TITLE_PROGESS = "## ⏳&nbsp; Detecing API diff in progress...\n"
+TITLE_PROGESS = "## Detecing API diff in progress...\n"
 TITLE_END_DIFF = '## Apple API Diff Report\n'
-TITLE_END_NO_DIFF = "## ✅&nbsp; No API diff detected\n"
+TITLE_END_NO_DIFF = "## No API diff detected\n"
 
 COMMENT_HIDDEN_IDENTIFIER = '\r\n<hidden value="api-diff-report-comment"></hidden>\r\n'
 GITHUB_API_URL = 'https://api.github.com/repos/sunmou99/firebase-ios-sdk'
