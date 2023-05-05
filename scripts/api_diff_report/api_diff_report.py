@@ -42,6 +42,7 @@ def main():
     logging.info(f'json diff: \n{json.dumps(diff, indent=2)}')
     logging.info(f'plain text diff report: \n{generate_text_report(diff)}')
     report = generate_markdown_report(diff)
+    logging.info(f'markdown diff report: \n{report}')
   else:
     logging.info('No API Diff Detected.')
     report = ""
@@ -52,7 +53,7 @@ def main():
   api_report_path = os.path.join(output_dir, API_DIFF_FILE_NAME)
   logging.info(f'Writing API diff report to {api_report_path}')
   with open(api_report_path, 'w') as f:
-    f.write(json.dumps(report, indent=2))
+    f.write(report)
 
 
 def generate_diff_json(new_api, old_api, level='module'):

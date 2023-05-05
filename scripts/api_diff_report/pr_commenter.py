@@ -51,7 +51,7 @@ def main():
 
   report = ""
   if stage == STAGES_PROGRESS:
-    report = generate_markdown_title(TITLE_PROGESS, commit, run_id)
+    report = COMMENT_HIDDEN_IDENTIFIER + generate_markdown_title(TITLE_PROGESS, commit, run_id)
     delete_label(token, pr_number, PR_LABLE)
   elif stage == STAGES_END:
     diff_report_file = os.path.join(os.path.expanduser(args.report),
