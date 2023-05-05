@@ -51,7 +51,7 @@ def main():
 
     if not os.path.exists(args.output_dir):
         os.makedirs(args.output_dir)
-    api_report_path = os.path.join(args.output_dir, API_DIFF_FILE_NAME)
+    api_report_path = os.path.join(os.path.expanduser(args.output_dir), API_DIFF_FILE_NAME)
     logging.info(f'Writing API diff report to {api_report_path}')
     with open(api_report_path, 'w') as f:
         f.write(json.dumps(report, indent=2))
