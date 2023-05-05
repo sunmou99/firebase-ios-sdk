@@ -16,6 +16,11 @@ jobs:
       - name: Copy script
         run: cp -a scripts/api_diff_report/. ~/api_diff_report
 
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.7
+
       - name: Install Prerequisites
         run:  ~/api_diff_report/prerequisite.sh
 
