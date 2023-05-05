@@ -116,7 +116,7 @@ def get_comment_id(token, issue_number, comment_identifier):
 
 def list_comments(token, issue_number):
   # """https://docs.github.com/en/rest/reference/issues#list-issue-comments"""
-  url = f'{GITHUB_API_URL}/issues/{issue_number}/comments'
+  url = f"{GITHUB_API_URL}/issues/{issue_number}/comments"
   headers = {
       'Accept': 'application/vnd.github.v3+json',
       'Authorization': f'token {token}'
