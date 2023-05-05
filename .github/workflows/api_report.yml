@@ -21,9 +21,11 @@ jobs:
 
       - name: Clean Diff Report Comment in PR
         run: |
-          python ~/api_diff_report/pr_commenter.py --comment "" \
+          python ~/api_diff_report/pr_commenter.py --stage progress \
             --token ${{github.token}} \
-            --pr_number ${{github.event.pull_request.number}} 
+            --pr_number ${{github.event.pull_request.number}} \
+            --commit $GITHUB_SHA \
+            --run_id ${{github.run_id}}
 
       - id: get_changed_files
         run: echo "file_list=$(git diff --name-only -r HEAD^1 HEAD | tr '\n' ' ')" >> $GITHUB_OUTPUT
@@ -44,7 +46,8 @@ jobs:
 
       - name: Update Diff Report Comment in PR
         run: |
-          python ~/api_diff_report/pr_commenter.py --report "~/diff_report" \
+          python ~/api_diff_report/pr_commenter.py --stage end \
+            --report "~/diff_report" \
             --token ${{github.token}} \
             --pr_number ${{github.event.pull_request.number}} \
             --commit $GITHUB_SHA \
